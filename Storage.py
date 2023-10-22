@@ -2,7 +2,6 @@ import math
 
 from scipy.sparse import dok_array
 from abc import ABC, abstractmethod
-from BitUtil import *
 
 
 # abstract class that defines how transitions are saved and accessed
@@ -58,15 +57,11 @@ class AlphabetMap:
     def get_sigma_size(self):
         return len(self.sigma)
 
-    def get_sigma_bit_len(self):
+    def get_sigma_encoding_num_bits(self):
         return self.bits
 
-    # Returns the bit length of a sigma x sigma tuple
-    def get_vec_bit_len(self):
-        return self.bits * 2
-
     # Returns |sigma * sigma|
-    def get_num_csym(self):
+    def get_num_symbols_in_sigma_x_sigma(self):
         return len(self.sigma) * len(self.sigma)
 
     # Encodes sigma as a bit map
@@ -74,19 +69,29 @@ class AlphabetMap:
         return (1 << len(self.sigma)) - 1
 
     # Maps a symbol in sigma to an integer
-    def map_symbol(self, x):
+    def symbol_to_int(self, x):
         return self.symbolIntMap[x]
 
-    def combine_bits(self, x, y):
+    def combine_x_and_y(self, x, y):
         return x << self.bits | y
 
     # Combines symbols x and y to a 32bit integer
     # Used for sigma x sigma transitions
-    def combine_symbols(self, x, y):
-        return self.combine_bits(self.map_symbol(x), self.map_symbol(y))
+    def combine_symbols(self, sym_x, sym_y):
+        return self.combine_x_and_y(self.symbol_to_int(sym_x), self.symbol_to_int(sym_y))
 
-    def trans_str(self, x_y):
-        return "[" + self.sigma[(get_input(x_y, self.bits))] + "," + self.sigma[(get_output(x_y, self.bits))] + "]"
+    # Returns u from the bit tuple [u, v]
+    # n is the length of the tuple
+    def get_x(self, t_vec):
+        return t_vec >> self.bits
+
+    # Returns v from the bit tuple [u, v]
+    # n is the length of the tuple
+    def get_y(self, t_vec):
+        return t_vec & (1 << self.bits) - 1
+
+    def transition_to_str(self, x_y):
+        return "[" + self.sigma[(self.get_x(x_y))] + "," + self.sigma[(self.get_y(x_y))] + "]"
 
     def __str__(self):
         tmp = ""
