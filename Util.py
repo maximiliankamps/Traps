@@ -2,7 +2,7 @@ class Triple:
     def __init__(self, l, I, r):
         self.l = l
         self.I = I
-        self.z = r
+        self.r = r
 
     def get_l(self):
         return self.l

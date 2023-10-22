@@ -2,6 +2,7 @@ import math
 
 from scipy.sparse import dok_array
 from abc import ABC, abstractmethod
+from BitUtil import *
 
 
 # abstract class that defines how transitions are saved and accessed
@@ -83,6 +84,9 @@ class AlphabetMap:
     # Used for sigma x sigma transitions
     def combine_symbols(self, x, y):
         return self.combine_bits(self.map_symbol(x), self.map_symbol(y))
+
+    def trans_str(self, x_y):
+        return "[" + self.sigma[(get_input(x_y, self.bits))] + "," + self.sigma[(get_output(x_y, self.bits))] + "]"
 
     def __str__(self):
         tmp = ""

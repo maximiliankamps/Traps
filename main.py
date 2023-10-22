@@ -27,7 +27,10 @@ def build_circular_token_passing_transducer():
 
 
 if __name__ == '__main__':
-    print(bin(BitUtil.shrink_bit_map(0b10101100, 1)))
+    a_m = Storage.AlphabetMap(['n', 't'])
+    c1 = [0]   # q0
+    c2 = [1]  # q1
+    u = 0b0    # n
+    S = 0b00    # {}
 
-    x = build_circular_token_passing_transducer()
-    x.dot_string("trans")
+    print(Algorithms.step_game(c1, u, S, c2, a_m, build_circular_token_passing_transducer(), 0))
