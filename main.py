@@ -7,6 +7,19 @@ import BitUtil
 import Storage
 
 
+def build_simple_token_passing_transducer():
+    a_m = Storage.AlphabetMap(['n', 't'])
+    transducer = Automata.Transducer(3, a_m)
+
+    transducer.add_transition(1, a_m.combine_symbols('n', 'n'), 1)
+    transducer.add_transition(1, a_m.combine_symbols('t', 'n'), 2)
+
+    transducer.add_transition(2, a_m.combine_symbols('n', 't'), 3)
+
+    transducer.add_transition(3, a_m.combine_symbols('n', 'n'), 3)
+    return transducer
+
+
 def build_circular_token_passing_transducer():
     a_m = Storage.AlphabetMap(['n', 't'])
     trans = Automata.Transducer(6, a_m)
@@ -33,4 +46,8 @@ if __name__ == '__main__':
     u = 0b0    # n
     S = 0b00    # {}
 
-    print(Algorithms.step_game(c1, u, S, c2, a_m, build_circular_token_passing_transducer(), 0))
+    Algorithms.built_sigma_sigma_transducer(build_simple_token_passing_transducer())
+
+
+
+    #print(Algorithms.step_game(c1, u, S, c2, a_m, build_circular_token_passing_transducer(), 0))

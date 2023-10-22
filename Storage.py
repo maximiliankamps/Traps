@@ -27,15 +27,15 @@ class AbstractStorage(ABC):
 
 # store transitions in a sparse matrix with State Action Pairs <(origin,symbol)> = target
 class SparseStorage(AbstractStorage):
-    def __init__(self, state_count, symbol_count):  # symbol_count referees to the count sigma x sigma
+    def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
         self.sparseMatrix = dok_array((state_count, symbol_count), dtype=int)
 
     def add_transition(self, origin, symbol, target):
-        self.sparseMatrix[(origin, symbol)] = target
+        self.sparseMatrix[(origin-1, symbol)] = target
 
     def get_successor(self, origin, symbol):
-        if (origin, symbol) in self.sparseMatrix:
-            return self.sparseMatrix[(origin, symbol)]
+        if (origin-1, symbol) in self.sparseMatrix:
+            return self.sparseMatrix[(origin-1, symbol)]
         return -1
 
     def __str__(self):
