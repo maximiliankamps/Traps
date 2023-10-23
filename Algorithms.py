@@ -2,7 +2,7 @@ import math
 
 import crypto
 
-from Automata import Transducer
+from Automata import Transducer, NFATransducer
 import Storage
 import numpy as np
 from Util import Triple
@@ -11,10 +11,14 @@ from Cryptodome.Hash import SHAKE256
 from binascii import hexlify
 
 
-def hash_state(state_str, bit_length):  # TODO: check if function does not produce collisions
+def hash_state(column_list, byte_length):  # TODO: check if function does not produce collisions
+    """Combines all states in column_list in to a string and returns a hash of byte_length"""
     shake = SHAKE256.new()
+    state_str = ""
+    for state in column_list:
+        state_str += str(state + 1)  # Important!!! + 1 to generate unique hash for columns with q0 states
     shake.update(bytes(state_str, 'ascii'))
-    return int.from_bytes(hexlify(shake.read(bit_length)), 'big')
+    return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
 
 
 def state_from_column(column, bits):  # TODO: replace with Hashing
@@ -30,8 +34,8 @@ def powerset(iterable):
 
 
 def transition_iterator(T):
-    """returns a lazy iterator over all permutations (c1, c2), (u, S)"""
-    state_range = range(1, T.get_state_count() + 1)
+    """Returns a lazy iterator over all permutations (c1, c2), (u, S)"""
+    state_range = range(0, T.get_state_count())
     u_range = range(0, T.get_alphabet_map().get_sigma_size())
     S_range = range(0, int(math.pow(2, T.get_alphabet_map().get_sigma_size())))
     c1_powerset = powerset(state_range)
@@ -41,23 +45,26 @@ def transition_iterator(T):
 
 
 def built_sigma_sigma_transducer(T):
+    """Returns the Seperator transducer (with replaced S) for the Transducer T"""
     alph_m = T.get_alphabet_map()
-    result = Transducer(10000, alph_m)
+    result = NFATransducer(1000, alph_m)
+    column_hashing = Storage.ColumnHashing()
 
     for ((c1, c2), (u, S)) in transition_iterator(T):
-        if c1 == [2] and c2 == [3] and u == 1 and S == 0:
-            k = 0
-        winning = step_game(c1, u, S, c2, T, False)
-        if winning:
-            origin = state_from_column(c1, 2)
-            target = state_from_column(c2, 2)
+        winning_strategy = step_game(c1, u, S, c2, T, False)
+        if winning_strategy:
+            origin_hash = hash_state(c1, 1)
+            target_hash = hash_state(c2, 1)
+            column_hashing.store_column(origin_hash, c1)
+            column_hashing.store_column(target_hash, c2)
+
+            print(column_hashing.get_column_str(origin_hash) + " ---> " + column_hashing.get_column_str(target_hash))
             for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
-                print("trans: " + bin(y))
-                result.add_transition(origin, alph_m.combine_x_and_y(y, u), target)
-            print(str(list(c1)) + ", {" + str(u) + "|" + bin(S) + "}, " + str(list(c2)))
-            print(bin(origin) + " ---> " + bin(target))
+                print("trans: " + alph_m.transition_to_str(alph_m.combine_x_and_y(y, u)))
+                result.add_transition(origin_hash, alph_m.combine_x_and_y(y, u), target_hash)
+
             print("------------------------------------------------------------------")
-    result.dot_string("sigma")
+    result.dot_string("sigma", column_hashing)
 
 
 # c1:            an array of the states in the from-column
@@ -72,7 +79,6 @@ def step_game(c1, u, S, c2,T, logging):
     winning_strategy = []  # List of <q, x_y, p>
     n = len(c1)
     m = len(c2)
-    bits = alphabet_map.get_sigma_encoding_num_bits()
 
     cur_c1 = slice_column(c1, game_state.l)
     cur_c2 = slice_column(c2, game_state.r)
