@@ -18,14 +18,8 @@ def hash_state(column_list, byte_length):  # TODO: check if function does not pr
     for state in column_list:
         state_str += str(state + 1)  # Important!!! + 1 to generate unique hash for columns with q0 states
     shake.update(bytes(state_str, 'ascii'))
-    return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
-
-
-def state_from_column(column, bits):  # TODO: replace with Hashing
-    state = 0
-    for i, q in enumerate(column):
-        state += q << (bits * i)
-    return state
+    return int(state_str)
+    #return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
 
 
 def powerset(iterable):
@@ -44,10 +38,10 @@ def transition_iterator(T):
     return product(product(c1_powerset, c2_powerset), u_S_cross)  # TODO: better ordering of columns
 
 
-def built_sigma_sigma_transducer(T):
+def built_sigma_sigma_transducer(T, logging):
     """Returns the Seperator transducer (with replaced S) for the Transducer T"""
     alph_m = T.get_alphabet_map()
-    result = NFATransducer(1000, alph_m)
+    s_s_transducer = NFATransducer(1000, alph_m)
     column_hashing = Storage.ColumnHashing()
 
     for ((c1, c2), (u, S)) in transition_iterator(T):
@@ -55,16 +49,20 @@ def built_sigma_sigma_transducer(T):
         if winning_strategy:
             origin_hash = hash_state(c1, 1)
             target_hash = hash_state(c2, 1)
-            column_hashing.store_column(origin_hash, c1)
-            column_hashing.store_column(target_hash, c2)
-
-            print(column_hashing.get_column_str(origin_hash) + " ---> " + column_hashing.get_column_str(target_hash))
             for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
-                print("trans: " + alph_m.transition_to_str(alph_m.combine_x_and_y(y, u)))
-                result.add_transition(origin_hash, alph_m.combine_x_and_y(y, u), target_hash)
+                s_s_transducer.add_transition(origin_hash, alph_m.combine_x_and_y(y, u), target_hash)
+                if logging:
+                    log_sigma_sigma_step(origin_hash, target_hash, c1, c2, y, u, column_hashing, alph_m)
+    return s_s_transducer
 
-            print("------------------------------------------------------------------")
-    result.dot_string("sigma", column_hashing)
+
+def log_sigma_sigma_step(origin_hash, target_hash, c1, c2, y, u, column_hashing, alph_m):
+    column_hashing.store_column(origin_hash, c1)
+    column_hashing.store_column(target_hash, c2)
+    print(column_hashing.get_column_str(origin_hash, ) + ", " +
+          alph_m.transition_to_str(alph_m.combine_x_and_y(y, u)) + ", " +
+          column_hashing.get_column_str(target_hash))
+    print("----------------------------")
 
 
 # c1:            an array of the states in the from-column
@@ -72,7 +70,7 @@ def built_sigma_sigma_transducer(T):
 # S:             a bit map encoding the seperator
 # c2:            an array of the states in the to-column
 # T:             the transducer T
-def step_game(c1, u, S, c2,T, logging):
+def step_game(c1, u, S, c2, T, logging):
     """Returns a winning strategy if the transition (c1, [u,S], c2) is part of the sigma x sigma transducer"""
     alphabet_map = T.get_alphabet_map()
     game_state = Triple(0, refine_seperator(alphabet_map.get_bit_map_sigma(), u), 0)  # Initialize game_state <l,I,r>

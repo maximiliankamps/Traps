@@ -1,13 +1,15 @@
+import itertools
 import math
 
 from scipy.sparse import dok_array
 from abc import ABC, abstractmethod
+from itertools import *
 
 import Automata
 
 
 # abstract class that defines how transitions are saved and accessed
-class AbstractStorage(ABC):
+class AbstractStateSymbolStorage(ABC):
 
     @abstractmethod
     def __init__(self, state_count, symbol_count):
@@ -34,7 +36,7 @@ class ColumnHashing:
         """Maps [0, 1, 2] -> q0q1q2 and stores result in a map with key column_hash"""
         column_str = ""
         for index in column_list:
-            column_str = "q" + str(index) + column_str
+            column_str = column_str + "q" + str(index)  # TODO: Revert order for columns again!
         self.mapping[column_hash] = column_str
 
     def get_column_str(self, column_hash):
@@ -43,7 +45,7 @@ class ColumnHashing:
 
 
 # TODO: Replace with efficient implementation
-class SimpleStorageNFA(AbstractStorage):
+class SimpleStorageNFA(AbstractStateSymbolStorage):
     """Maps (state, symbol) to [state]. Used for Seperator Transducer"""
 
     def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
@@ -68,7 +70,7 @@ class SimpleStorageNFA(AbstractStorage):
         return result
 
 
-class SparseStorage(AbstractStorage):
+class SparseStorage(AbstractStateSymbolStorage):
     """store transitions in a sparse matrix with State Action Pairs <(origin,symbol)> = target"""
 
     def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
@@ -100,6 +102,13 @@ class AlphabetMap:
         for i, sym in enumerate(self.sigma):
             tmp[sym] = i
         return tmp
+
+    def sigma_x_sigma_iterator(self):
+        return range(0, self.get_num_symbols_in_sigma_x_sigma())
+
+    # TODO: implement
+    def sigma_x_sigma_id_iterator(self):
+        return 0
 
     def get_sigma_size(self):
         """Returns the size of the alphabet sigma """
