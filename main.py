@@ -6,11 +6,23 @@ import Automata
 import Storage
 
 
+def build_token_parsing_input_transducer():
+    alph_map = Storage.AlphabetMap(['n', 't'])
+    transducer = Automata.Transducer(2, alph_map)
+    transducer.set_initial_state(0)
+    transducer.add_final_state(1)
+
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
+    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
+    return transducer
+
+
 def build_simple_token_passing_transducer(as_NFA):
     alph_map = Storage.AlphabetMap(['n', 't'])
     transducer = None
     if as_NFA:
-        transducer = Automata.NFATransducer(3, alph_map)
+        transducer = Automata.NFATransducer(alph_map)
     else:
         transducer = Automata.Transducer(3, alph_map)
 
@@ -24,6 +36,7 @@ def build_simple_token_passing_transducer(as_NFA):
 
     transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
     return transducer
+
 
 # TODO: build simple_token_transducer by hand and compare with code
 
@@ -83,23 +96,9 @@ def collatz_transducer(as_NFA):
 
 
 if __name__ == '__main__':
-    NFA = collatz_transducer(True)
-    DFA = collatz_transducer(False)
-
-    # DFA.dot_string("t", None)
-
-    (NFA.left_join(DFA))
-    """
-    alph_map = Storage.AlphabetMap(['n', 't'])
-    DFA = Automata.Transducer(1, alph_map)
-    DFA.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    DFA.initial_state = 0
-
-    NFA = Automata.NFATransducer(2, alph_map)
-    NFA.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    NFA.add_transition(0, alph_map.combine_symbols('n', 't'), 1)
-    NFA.add_transition(1, alph_map.combine_symbols('n', 't'), 1)
-    NFA.initial_state = 0
-    """
-
-    # Algorithms.built_sigma_sigma_transducer(build_simple_token_passing_transducer(), False).dot_string("sigma", None)
+    in_transducer = build_token_parsing_input_transducer()
+    in_transducer.to_dot("Simple", False)
+    T = build_simple_token_passing_transducer(False)
+    Sigma_T = Algorithms.built_sigma_sigma_transducer(T, True)
+    left = Sigma_T.left_join(in_transducer)
+    print(left.get_final_states())

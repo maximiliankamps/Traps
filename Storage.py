@@ -84,14 +84,19 @@ class SparseStorage(AbstractStorage):
 
 
 class ColumnHashing:
-    def __init__(self):
+    # LSSF = least Significant State First
+    def __init__(self, LSSF):
+        self.LSSF = LSSF
         self.mapping = {}
 
     def store_column(self, column_hash, column_list):
         """Maps [0, 1, 2] -> q0q1q2 and stores result in a map with key column_hash"""
         column_str = ""
         for index in column_list:
-            column_str = column_str + "q" + str(index)  # TODO: Revert order for columns again!
+            if self.LSSF:
+                column_str = column_str + "q" + str(index)  # TODO: Revert order for columns again!
+            else:
+                column_str = "q" + str(index) + column_str
         self.mapping[column_hash] = column_str
 
     def get_column_str(self, column_hash):

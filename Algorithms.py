@@ -19,7 +19,7 @@ def hash_state(column_list, byte_length):  # TODO: Produces collisions
         state_str += str(state + 1)  # Important!!! + 1 to generate unique hash for columns with q0 states
     shake.update(bytes(state_str, 'ascii'))
     return int(state_str)
-    #return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
+    # return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
 
 
 def powerset(iterable):
@@ -41,8 +41,10 @@ def transition_iterator(T):
 def built_sigma_sigma_transducer(T, logging):
     """Returns the Seperator transducer (with replaced S) for the Transducer T"""
     alph_m = T.get_alphabet_map()
-    s_s_transducer = NFATransducer(1000, alph_m)
-    column_hashing = Storage.ColumnHashing()
+    s_s_transducer = NFATransducer(alph_m)
+    column_hashing = Storage.ColumnHashing(True)
+
+    s_s_transducer.set_initial_state(hash_state([T.get_initial_state()], 1))
 
     for ((c1, c2), (u, S)) in transition_iterator(T):
         winning_strategy = step_game(c1, u, S, c2, T, False)
@@ -51,8 +53,13 @@ def built_sigma_sigma_transducer(T, logging):
             target_hash = hash_state(c2, 1)
             for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
                 s_s_transducer.add_transition(origin_hash, alph_m.combine_x_and_y(y, u), target_hash)
+                if set(c1).issubset(set(T.get_final_states())):
+                    s_s_transducer.add_final_state(origin_hash)
+                if set(c2).issubset(set(T.get_final_states())):
+                    s_s_transducer.add_final_state(target_hash)
                 if logging:
                     log_sigma_sigma_step(origin_hash, target_hash, c1, c2, y, u, column_hashing, alph_m)
+    s_s_transducer.to_dot("sigma", None)
     return s_s_transducer
 
 
@@ -87,8 +94,7 @@ def step_game(c1, u, S, c2, T, logging):
     while progress:
         q = (c1[n - 1], c1[np.clip(0, n - 1, game_state.l)])[game_state.l < n]
         progress = 0
-        for x_y in range(
-                alphabet_map.get_num_symbols_in_sigma_x_sigma()):  # TODO: Iterate over successors instead of symbols
+        for x_y in range(alphabet_map.get_num_symbols_in_sigma_x_sigma()):
             p = T.get_successor(q, x_y)
             if p != -1 and p not in p_visited:
                 # Verifies the 3 conditions to see if <q,[x,y],p> is part of winning strategy

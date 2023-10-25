@@ -24,6 +24,15 @@ class AbstractTransducer(ABC):
         pass
 
     @abstractmethod
+    def is_final_state(self, state):
+        pass
+
+    @abstractmethod
+    def get_final_states(self):
+        pass
+
+
+    @abstractmethod
     def get_alphabet_map(self):
         pass
 
@@ -58,6 +67,9 @@ class NFATransducer(AbstractTransducer):
     def add_final_state(self, state):
         self.final_states.append(state)
 
+    def get_final_states(self):
+        return self.final_states
+
     def get_alphabet_map(self):
         return self.alphabet_map
 
@@ -72,7 +84,7 @@ class NFATransducer(AbstractTransducer):
         return self.transitions.state_iterator()
 
     def to_dot(self, filename, column_hashing):
-        g = gviz.Digraph('G', filename=f'{filename}')
+        g = gviz.Digraph('G', filename="Pictures/" + f'{filename}')
 
         for source in range(0, 10000):
             for x in self.alphabet_map.sigma:
@@ -98,7 +110,7 @@ class NFATransducer(AbstractTransducer):
         T_new = NFATransducer(self.alphabet_map)
         W = [(dfa.get_initial_state(), self.initial_state)]
         Q = []
-        c_hash = Storage.ColumnHashing()
+        c_hash = Storage.ColumnHashing(True)
 
         while W:
             (q1, q2) = W.pop()
@@ -126,7 +138,7 @@ class NFATransducer(AbstractTransducer):
                                 if q1_q2_target_hash not in Q:
                                     W.append((q1_target, q2_target))
                                 T_new.add_transition(q1_q2_hash, a_b, q1_q2_target_hash)
-        T_new.to_dot("join", c_hash)
+        T_new.to_dot("join", None)
         return T_new
 
 
@@ -151,6 +163,9 @@ class Transducer(ABC):
     def add_final_state(self, state):
         self.final_states.append(state)
 
+    def get_final_states(self):
+        return self.final_states
+
     def get_alphabet_map(self):
         return self.alphabet_map
 
@@ -165,7 +180,7 @@ class Transducer(ABC):
         return self.transitions.get_successor(origin, symbol_index)
 
     def to_dot(self, filename, as_bin):
-        g = gviz.Digraph('G', filename=f'{filename}')
+        g = gviz.Digraph('G', filename="Pictures/" + f'{filename}')
 
         for source in range(0, self.state_count):
             for x in self.alphabet_map.sigma:
