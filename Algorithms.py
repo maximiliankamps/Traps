@@ -11,7 +11,7 @@ from Cryptodome.Hash import SHAKE256
 from binascii import hexlify
 
 
-def hash_state(column_list, byte_length):  # TODO: check if function does not produce collisions
+def hash_state(column_list, byte_length):  # TODO: Produces collisions
     """Combines all states in column_list in to a string and returns a hash of byte_length"""
     shake = SHAKE256.new()
     state_str = ""

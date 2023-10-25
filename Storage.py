@@ -5,27 +5,82 @@ from scipy.sparse import dok_array
 from abc import ABC, abstractmethod
 from itertools import *
 
-import Automata
-
 
 # abstract class that defines how transitions are saved and accessed
-class AbstractStateSymbolStorage(ABC):
+class AbstractStorage(ABC):
 
     @abstractmethod
     def __init__(self, state_count, symbol_count):
         pass
 
     @abstractmethod
-    def add_transition(self, origin, symbol, target):
+    def add_transition(self, ke1, ke2, target):
         pass
 
     @abstractmethod
-    def get_successor(self, origin, symbol):
+    def get_successor(self, ke1, key2):
+        pass
+
+    @abstractmethod
+    def state_iterator(self):
         pass
 
     @abstractmethod
     def __str__(self):
         pass
+
+
+# TODO: Replace with efficient implementation
+class SimpleStorageNFA(AbstractStorage):
+    """Maps (state, symbol) to [state]. Used for Seperator Transducer"""
+
+    def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
+        self.state_count = 0
+        self.dictionary = {}
+
+    def add_transition(self, origin, symbol, target):
+        self.state_count += 1
+        if self.dictionary.get((origin, symbol)) is None:
+            self.dictionary[(origin, symbol)] = [target]
+        else:
+            self.dictionary[(origin, symbol)].append(target)
+
+    def get_successor(self, origin, symbol):
+        if self.dictionary.get((origin, symbol)) is not None:
+            return self.dictionary[(origin, symbol)]
+        return None
+
+    def state_iterator(self):
+        return range(0, self.state_count)
+
+    def __str__(self):
+        result = ""
+        for (state, symbol) in self.dictionary:
+            result += "state: " + str(state) + " symbol: " + str(symbol) + " target: " + str(
+                self.dictionary[(state, symbol)]) + "\n"
+        return result
+
+
+class SparseStorage(AbstractStorage):
+    """store transitions in a sparse matrix with State Action Pairs <(origin,symbol)> = target"""
+
+    def __init__(self, row_count, column_count):
+        self.states = row_count
+        self.sparseMatrix = dok_array((row_count, column_count), dtype=int)
+
+    def add_transition(self, row_index, column_index, entry):
+        self.sparseMatrix[(row_index, column_index)] = entry + 1
+
+    def get_successor(self, row_index, column_index):
+        if (row_index, column_index) in self.sparseMatrix:
+            return self.sparseMatrix[(row_index, column_index)] - 1
+        return -1
+
+    def state_iterator(self):
+        return range(0, self.states)
+
+    def __str__(self):
+        return self.sparseMatrix.toarray().__str__()
 
 
 class ColumnHashing:
@@ -44,50 +99,6 @@ class ColumnHashing:
         return self.mapping[column_hash]
 
 
-# TODO: Replace with efficient implementation
-class SimpleStorageNFA(AbstractStateSymbolStorage):
-    """Maps (state, symbol) to [state]. Used for Seperator Transducer"""
-
-    def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
-        self.dictionary = {}
-
-    def add_transition(self, origin, symbol, target):
-        if self.dictionary.get((origin, symbol)) is None:
-            self.dictionary[(origin, symbol)] = [target]
-        else:
-            self.dictionary[(origin, symbol)].append(target)
-
-    def get_successor(self, origin, symbol):
-        if self.dictionary.get((origin, symbol)) is not None:
-            return self.dictionary[(origin, symbol)]
-        return None
-
-    def __str__(self):
-        result = ""
-        for (state, symbol) in self.dictionary:
-            result += "state: " + str(state) + " symbol: " + str(symbol) + " target: " + str(
-                self.dictionary[(state, symbol)]) + "\n"
-        return result
-
-
-class SparseStorage(AbstractStateSymbolStorage):
-    """store transitions in a sparse matrix with State Action Pairs <(origin,symbol)> = target"""
-
-    def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
-        self.sparseMatrix = dok_array((state_count, symbol_count), dtype=int)
-
-    def add_transition(self, origin, symbol, target):
-        self.sparseMatrix[(origin, symbol)] = target + 1
-
-    def get_successor(self, origin, symbol):
-        if (origin, symbol) in self.sparseMatrix:
-            return self.sparseMatrix[(origin, symbol)] - 1
-        return -1
-
-    def __str__(self):
-        return self.sparseMatrix.toarray().__str__()
-
-
 class AlphabetMap:
     """Maps the symbols in sigma to int"""
 
@@ -103,12 +114,15 @@ class AlphabetMap:
             tmp[sym] = i
         return tmp
 
+    def sigma_iterator(self):
+        return range(0, self.get_sigma_size())
+
     def sigma_x_sigma_iterator(self):
         return range(0, self.get_num_symbols_in_sigma_x_sigma())
 
     # TODO: implement
     def sigma_x_sigma_id_iterator(self):
-        return 0
+        return iter([self.combine_x_and_y(s, s) for s in range(0, self.get_sigma_size())])
 
     def get_sigma_size(self):
         """Returns the size of the alphabet sigma """
@@ -167,10 +181,3 @@ class Statistics:
 
 if __name__ == '__main__':
     alph_map = AlphabetMap(['n', 't'])
-    x = Automata.NFATransducer(5, alph_map)
-    x.add_transition(0, alph_map.combine_symbols('n', 'n'), 2)
-    x.add_transition(0, alph_map.combine_symbols('n', 'n'), 3)
-    x.add_transition(3, alph_map.combine_symbols('n', 't'), 3)
-    x.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    print(x.transitions)
-    x.dot_string("test", False)

@@ -25,10 +25,6 @@ def build_simple_token_passing_transducer(as_NFA):
     transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
     return transducer
 
-
-
-# TODO: change storage so entries are shifted by one, revert labeling everywhere else to 0....n
-# TODO: modify dot_string function so it displays states as columns
 # TODO: build simple_token_transducer by hand and compare with code
 
 def build_circular_token_passing_transducer():
@@ -49,16 +45,16 @@ def build_circular_token_passing_transducer():
     trans.add_transition(4, alph_map.combine_symbols('t', 'n'), 5)
     return trans
 
-def collatz_transucer(as_NFA):
+
+def collatz_transducer(as_NFA):
     alph_map = Storage.AlphabetMap(['0', '1'])
     transducer = None
     if as_NFA:
-        transducer = Automata.NFATransducer(7, alph_map)
+        transducer = Automata.NFATransducer(alph_map)
     else:
         transducer = Automata.Transducer(7, alph_map)
     transducer.initial_state = 1
     transducer.final_states = [1, 2, 6]
-
 
     zz = alph_map.combine_symbols('0', '0')
     zo = alph_map.combine_symbols('0', '1')
@@ -86,13 +82,11 @@ def collatz_transucer(as_NFA):
     return transducer
 
 
-
 if __name__ == '__main__':
-    NFA = collatz_transucer(True)
-    DFA = collatz_transucer(False)
+    NFA = collatz_transducer(True)
+    DFA = collatz_transducer(False)
 
-    #DFA.dot_string("t", None)
-
+    # DFA.dot_string("t", None)
 
     (NFA.left_join(DFA))
     """
@@ -108,6 +102,4 @@ if __name__ == '__main__':
     NFA.initial_state = 0
     """
 
-
-    #Algorithms.built_sigma_sigma_transducer(build_simple_token_passing_transducer(), False).dot_string("sigma", None)
-
+    # Algorithms.built_sigma_sigma_transducer(build_simple_token_passing_transducer(), False).dot_string("sigma", None)

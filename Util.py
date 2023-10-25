@@ -15,3 +15,9 @@ class Triple:
 
     def __str__(self):
         return "<" + str(self.l) + "," + str(bin(self.I)) + "," + str(self.r) + ">"
+
+
+def optional_list(l):
+    if l is None:
+        return []
+    return l
