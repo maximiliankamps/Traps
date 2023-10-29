@@ -2,6 +2,7 @@ import Algorithms
 import Storage
 import graphviz as gviz
 from abc import ABC, abstractmethod
+from itertools import *
 
 import Util
 
@@ -105,29 +106,32 @@ class NFATransducer(AbstractTransducer):
 
         g.view()
 
-    def left_join(self, dfa):
+    def join(self, nfa):
         alph_map = self.get_alphabet_map()
         T_new = NFATransducer(self.alphabet_map)
-        W = [(dfa.get_initial_state(), self.initial_state)]
+        W = [(self.initial_state, nfa.get_initial_state())]
         Q = []
         c_hash = Storage.ColumnHashing(True)
 
+        q0_hash = Algorithms.hash_state([self.get_initial_state(), nfa.get_initial_state()], 1)
+        c_hash.store_column(q0_hash, [self.get_initial_state(), nfa.get_initial_state()])
+        T_new.set_initial_state(q0_hash)
         while W:
             (q1, q2) = W.pop()
             q1_q2_hash = Algorithms.hash_state([q1, q2], 1)
             c_hash.store_column(q1_q2_hash, [q1, q2])
 
-            if dfa.is_final_state(q1) and self.is_final_state(q2) and q1_q2_hash not in T_new.final_states:
+            if self.is_final_state(q1) and nfa.is_final_state(q2) and q1_q2_hash not in T_new.get_final_states():
                 T_new.add_final_state(q1_q2_hash)
 
             Q.append(q1_q2_hash)
             for a_c in alph_map.sigma_x_sigma_iterator():
                 for c_b in alph_map.sigma_x_sigma_iterator():
-                    q1_target = dfa.get_successor(q1, a_c)
-                    q2_target_list = self.get_successor(q2, c_b)
+                    q1_target_list = self.get_successor(q1, a_c)
+                    q2_target_list = nfa.get_successor(q2, c_b)
 
-                    if q1_target != -1 and q2_target_list is not None:
-                        for q2_target in q2_target_list:
+                    if q1_target_list is not None and q2_target_list is not None:
+                        for (q1_target, q2_target) in product(q1_target_list, q2_target_list):
                             q1_q2_target_hash = Algorithms.hash_state([q1_target, q2_target], 1)
                             a_b = alph_map.combine_x_and_y(alph_map.get_x(a_c), alph_map.get_y(c_b))
                             c_hash.store_column(q1_q2_target_hash, [q1_target, q2_target])
@@ -138,7 +142,6 @@ class NFATransducer(AbstractTransducer):
                                 if q1_q2_target_hash not in Q:
                                     W.append((q1_target, q2_target))
                                 T_new.add_transition(q1_q2_hash, a_b, q1_q2_target_hash)
-        T_new.to_dot("join", None)
         return T_new
 
 

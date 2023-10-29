@@ -145,9 +145,12 @@ class AlphabetMap:
         """Returns a bit map of length sigma"""
         return (1 << len(self.sigma)) - 1
 
-    def symbol_to_int(self, x):
+    def symbol_to_int(self, sym):
         """Maps a symbol to its integer representation"""
-        return self.symbolIntMap[x]
+        return self.symbolIntMap[sym]
+
+    def int_to_symbol(self, x):
+        return self.sigma[x]
 
     def combine_x_and_y(self, x, y):
         """Combines int x and y in to [x,y] (with the first bit of y being the LSB"""

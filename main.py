@@ -4,17 +4,31 @@ from scipy.sparse import random, dok_array
 import Algorithms
 import Automata
 import Storage
+from itertools import *
 
 
 def build_token_parsing_input_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
-    transducer = Automata.Transducer(2, alph_map)
+    transducer = Automata.NFATransducer(alph_map)
     transducer.set_initial_state(0)
     transducer.add_final_state(1)
 
     transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
     transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
+    return transducer
+
+def build_bad_word_token_parsing_transducer():
+    alph_map = Storage.AlphabetMap(['n', 't'])
+    transducer = Automata.NFATransducer(alph_map)
+    transducer.set_initial_state(0)
+    transducer.add_final_state(2)
+
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
+    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
+    transducer.add_transition(1, alph_map.combine_symbols('t', 't'), 2)
+    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
     return transducer
 
 
@@ -96,9 +110,25 @@ def collatz_transducer(as_NFA):
 
 
 if __name__ == '__main__':
-    in_transducer = build_token_parsing_input_transducer()
-    in_transducer.to_dot("Simple", False)
     T = build_simple_token_passing_transducer(False)
-    Sigma_T = Algorithms.built_sigma_sigma_transducer(T, True)
-    left = Sigma_T.left_join(in_transducer)
-    print(left.get_final_states())
+    I = build_token_parsing_input_transducer()
+
+    x = Algorithms.verify(I, T, 0)
+    x.to_dot("joined", None)
+    print(x.get_final_states())
+
+    """
+    I = build_token_parsing_input_transducer()
+    T = build_simple_token_passing_transducer(False)
+    B = build_bad_word_token_parsing_transducer()
+    T.to_dot("simple", None)
+    T_prime = Algorithms.verify(I, T, B)
+    T_prime.to_dot("final", None)
+    print(T_prime.get_final_states())
+    
+    result = Algorithms.verify(I, T, B)
+    result.to_dot("joined", None)
+    print(result.get_final_states())
+    """
+
+

@@ -1,3 +1,6 @@
+import Algorithms
+
+
 class Triple:
     def __init__(self, l, I, r):
         self.l = l
@@ -14,7 +17,7 @@ class Triple:
         return self.r
 
     def __str__(self):
-        return "<" + str(self.l) + "," + str(bin(self.I)) + "," + str(self.r) + ">"
+        return "<" + str(self.l) + "," + Algorithms.strS(self.I) + "," + str(self.r) + ">"
 
 
 def optional_list(l):

@@ -1,30 +1,24 @@
 import math
 
-import crypto
-
-from Automata import Transducer, NFATransducer
+from Automata import NFATransducer
 import Storage
 import numpy as np
 from Util import Triple
-from itertools import chain, combinations, product
-from Cryptodome.Hash import SHAKE256
-from binascii import hexlify
+from itertools import chain, combinations, product, permutations
 
 
 def hash_state(column_list, byte_length):  # TODO: Produces collisions
     """Combines all states in column_list in to a string and returns a hash of byte_length"""
-    shake = SHAKE256.new()
     state_str = ""
     for state in column_list:
         state_str += str(state + 1)  # Important!!! + 1 to generate unique hash for columns with q0 states
-    shake.update(bytes(state_str, 'ascii'))
     return int(state_str)
     # return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
 
 
-def powerset(iterable):
+def powerset_permutations(iterable):
     s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(1, len(s) + 1))
+    return chain.from_iterable(permutations(s, r) for r in range(1, len(s) + 1))
 
 
 def transition_iterator(T):
@@ -32,10 +26,30 @@ def transition_iterator(T):
     state_range = range(0, T.get_state_count())
     u_range = range(0, T.get_alphabet_map().get_sigma_size())
     S_range = range(0, int(math.pow(2, T.get_alphabet_map().get_sigma_size())))
-    c1_powerset = powerset(state_range)
-    c2_powerset = powerset(state_range)
+    c1_powerset = powerset_permutations(state_range)
+    c2_powerset = powerset_permutations(state_range)
     u_S_cross = product(u_range, S_range)
     return product(product(c1_powerset, c2_powerset), u_S_cross)  # TODO: better ordering of columns
+
+
+def build_v_trap(alph_map):
+    transducer = NFATransducer(alph_map)
+    transducer.set_initial_state(0)
+    transducer.add_final_state(1)
+
+    for (q, (x, y)) in product(range(0, 2), product(alph_map.sigma_iterator(), alph_map.sigma_iterator())):
+        if q == 0 and x != y:
+            transducer.add_transition(q, alph_map.combine_x_and_y(x, y), 0)
+        else:
+            transducer.add_transition(q, alph_map.combine_x_and_y(x, y), 1)
+    return transducer
+
+
+def verify(I, T, B):
+    S = built_sigma_sigma_transducer(T, True)
+    v_trap = build_v_trap(S.get_alphabet_map())
+    trap_join = S.join(v_trap)
+    return I.join(trap_join)
 
 
 def built_sigma_sigma_transducer(T, logging):
@@ -58,18 +72,19 @@ def built_sigma_sigma_transducer(T, logging):
                 if set(c2).issubset(set(T.get_final_states())):
                     s_s_transducer.add_final_state(target_hash)
                 if logging:
+                    x = 3
                     log_sigma_sigma_step(origin_hash, target_hash, c1, c2, y, u, column_hashing, alph_m)
-    s_s_transducer.to_dot("sigma", None)
+    s_s_transducer.to_dot("sigma", column_hashing)
     return s_s_transducer
 
 
 def log_sigma_sigma_step(origin_hash, target_hash, c1, c2, y, u, column_hashing, alph_m):
     column_hashing.store_column(origin_hash, c1)
     column_hashing.store_column(target_hash, c2)
-    print(column_hashing.get_column_str(origin_hash, ) + ", " +
-          alph_m.transition_to_str(alph_m.combine_x_and_y(y, u)) + ", " +
-          column_hashing.get_column_str(target_hash))
-    print("----------------------------")
+    #print(column_hashing.get_column_str(origin_hash, ) + ", " +
+    #      alph_m.transition_to_str(alph_m.combine_x_and_y(y, u)) + ", " +
+    #      column_hashing.get_column_str(target_hash))
+    #print("----------------------------")
 
 
 # c1:            an array of the states in the from-column
@@ -91,10 +106,11 @@ def step_game(c1, u, S, c2, T, logging):
 
     p_visited = []  # keep track which winning p have been visited from q TODO: Replace with bitmap
 
+
     while progress:
         q = (c1[n - 1], c1[np.clip(0, n - 1, game_state.l)])[game_state.l < n]
         progress = 0
-        for x_y in range(alphabet_map.get_num_symbols_in_sigma_x_sigma()):
+        for x_y in alphabet_map.sigma_x_sigma_iterator():
             p = T.get_successor(q, x_y)
             if p != -1 and p not in p_visited:
                 # Verifies the 3 conditions to see if <q,[x,y],p> is part of winning strategy
@@ -103,8 +119,8 @@ def step_game(c1, u, S, c2, T, logging):
                 y_not_in_I = symbol_not_in_seperator(game_state.I, alphabet_map.get_y(x_y))
 
                 if q_in_c1 and p_in_c2 and y_not_in_I:
-                    progress = 1
                     p_visited.append(p)
+                    progress = 1
                     winning_strategy.append([q, x_y, p])
 
                     # Update the game state and current columns
@@ -119,8 +135,8 @@ def step_game(c1, u, S, c2, T, logging):
 
                     # Game won
                     if game_state.l == n and game_state.r == m and game_state.I == S:
-                        return winning_strategy
-    return []
+                        return True
+    return False
 
     # if(T.get_successor())
 
@@ -150,8 +166,18 @@ def bit_map_seperator_to_inv_list(S, n):  # TODO: can be optimized?
 
 
 def log_step(n, m, S, c1, c2, cur_c1, cur_c2, q, x_y, p, game_state, alphabet_map):
-    print("-----------------------")
-    print("n: " + str(n) + "\nm: " + str(m) + "\nS: " + bin(S) + "\nc1 " + str(c1) + " | cur_c1: " + str(cur_c1))
+    print("n: " + str(n) + "\nm: " + str(m) + "\nS: " + strS(S) + "\nc1 " + str(c1) + " | cur_c1: " + str(cur_c1))
     print("c2: " + str(c2) + " | cur_c2: " + str(cur_c2))
     print("cur_trans: <" + str(q) + ", " + str(alphabet_map.transition_to_str(x_y)) + ", " + str(p) + ">")
     print("game_state: " + str(game_state))
+def strS(S):
+    if S == 0:
+        return "[]"
+    if S == 1:
+        return "[n]"
+    if S == 2:
+        return "[t]"
+    else:
+        return "[n, t]"
+
+
