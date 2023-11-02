@@ -13,14 +13,6 @@ class AbstractTransducer(ABC):
         pass
 
     @abstractmethod
-    def get_initial_state(self):
-        pass
-
-    @abstractmethod
-    def set_initial_state(self, initial_state):
-        pass
-
-    @abstractmethod
     def add_final_state(self, state):
         pass
 
@@ -56,11 +48,20 @@ class NFATransducer(AbstractTransducer):
         self.transitions = Storage.SimpleStorageNFA(0, alphabet_map.get_num_symbols_in_sigma_x_sigma())
         self.statistics = Storage.Statistics()
 
+    def set_state_count(self, state_count):
+        self.state_count = state_count
+    def get_state_count(self):
+        return self.state_count
+
     def get_initial_states(self):
         return self.initial_states
 
     def add_initial_state(self, initial_state):
         self.initial_states.append(initial_state)
+
+    def init_initial_states(self, initial_state_list):
+        self.initial_states = initial_state_list
+
 
     def is_final_state(self, state):
         return state in self.final_states
@@ -87,7 +88,7 @@ class NFATransducer(AbstractTransducer):
     def to_dot(self, filename, column_hashing):
         g = gviz.Digraph('G', filename="Pictures/" + f'{filename}')
 
-        for source in range(0, 10000):
+        for source in range(0, 100000):
             for x in self.alphabet_map.sigma:
                 for y in self.alphabet_map.sigma:
                     target = self.get_successor(source, self.alphabet_map.combine_symbols(x, y))
@@ -109,15 +110,15 @@ class NFATransducer(AbstractTransducer):
     def join(self, nfa):
         alph_map = self.get_alphabet_map()
         T_new = NFATransducer(self.alphabet_map)
-        W = [(self.initial_state, nfa.get_initial_state())]
+        W = list(product(self.get_initial_states(), nfa.get_initial_states()))
         Q = []
         c_hash = Storage.ColumnHashing(True)
 
-        q0_hash = Algorithms.hash_state([self.get_initial_state(), nfa.get_initial_state()], 1)
-        c_hash.store_column(q0_hash, [self.get_initial_state(), nfa.get_initial_state()])
-        T_new.set_initial_state(q0_hash)
+        initial_state_hashes = list(map(lambda x: Algorithms.hash_state(x, 1), W))
+        map(lambda h, c: c_hash.store_column(h, c), zip(initial_state_hashes, W))
+        T_new.init_initial_states(list(initial_state_hashes))
         while W:
-            (q1, q2) = W.pop()
+            (q1, q2) = W.pop(0)
             q1_q2_hash = Algorithms.hash_state([q1, q2], 1)
             c_hash.store_column(q1_q2_hash, [q1, q2])
 

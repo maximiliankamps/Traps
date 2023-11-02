@@ -10,8 +10,8 @@ from itertools import *
 def build_token_parsing_input_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
     transducer = Automata.NFATransducer(alph_map)
-    transducer.state_count = 3
-    transducer.set_initial_state(0)
+    transducer.set_state_count(2)
+    transducer.add_initial_state(0)
     transducer.add_final_state(1)
 
     transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
@@ -22,14 +22,15 @@ def build_token_parsing_input_transducer():
 def build_bad_word_token_parsing_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
     transducer = Automata.NFATransducer(alph_map)
-    transducer.set_initial_state(0)
+    transducer.add_initial_state(0)
     transducer.add_final_state(2)
+    transducer.set_state_count(3)
 
-    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
     transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
-    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 2)
-    transducer.add_transition(2, alph_map.combine_symbols('t', 't'), 2)
+    transducer.add_transition(1, alph_map.combine_symbols('t', 't'), 2)
+    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
     return transducer
 
 
@@ -43,6 +44,7 @@ def build_simple_token_passing_transducer(as_NFA):
 
     transducer.add_initial_state(0)
     transducer.add_final_state(2)
+    transducer.set_state_count(3)
 
     transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
     transducer.add_transition(0, alph_map.combine_symbols('t', 'n'), 1)
@@ -81,7 +83,7 @@ def collatz_transducer(as_NFA):
         transducer = Automata.NFATransducer(alph_map)
     else:
         transducer = Automata.Transducer(7, alph_map)
-    transducer.initial_state = 1
+    transducer.initial_states.append(1)
     transducer.final_states = [1, 2, 6]
 
     zz = alph_map.combine_symbols('0', '0')
@@ -111,18 +113,14 @@ def collatz_transducer(as_NFA):
 
 
 if __name__ == '__main__':
-    #Algorithms.built_sigma_sigma_transducer(build_simple_token_passing_transducer(False), True)
+    #collatz_transducer(True).join(collatz_transducer(True))
 
-
-
-    Algorithms.one_shot(build_simple_token_passing_transducer(False))
-    """
     I = build_token_parsing_input_transducer()
-    T = build_simple_token_passing_transducer(False)
+    T = build_simple_token_passing_transducer(True)
     B = build_bad_word_token_parsing_transducer()
-    T_prime = Algorithms.verify(I, T, B)
-    print(T_prime.get_final_states())
-    """
+
+    print(Algorithms.one_shot(I, T, B))
+
 
 
     
