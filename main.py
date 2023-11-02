@@ -59,7 +59,12 @@ def build_simple_token_passing_transducer(as_NFA):
 
 def build_circular_token_passing_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
-    trans = Automata.Transducer(6, alph_map)
+    trans = Automata.NFATransducer(alph_map)
+    trans.add_initial_state(0)
+    trans.add_final_state(3)
+    trans.add_final_state(5)
+    trans.set_state_count(6)
+
     trans.add_transition(0, alph_map.combine_symbols('n', 'n'), 1)
     trans.add_transition(0, alph_map.combine_symbols('t', 'n'), 2)
     trans.add_transition(0, alph_map.combine_symbols('n', 't'), 4)
