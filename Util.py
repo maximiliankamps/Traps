@@ -4,15 +4,21 @@ class Triple:
         self.I = I
         self.r = r
 
-    def update(self, b1, b2, i, i_bit):
+    def update(self, b1, b2, I):
         if b1 is not None:
             self.l = self.l + 1
         if b2 is not None:
             self.r = self.r + 1
-        self.I = self.I & (i_bit << i)
+        self.I = I
+
+    def xor_I(self, I):
+        self.I = self.I ^ I
 
     def get_I(self):
         return self.I
+
+    def get_l(self):
+        return self.l
 
     def get_r(self):
         return self.r
@@ -40,9 +46,9 @@ def strS(S):
         return "[n, t]"
 
 
-def symbol_in_seperator(S, i):
+def symbol_not_in_seperator(S, i):
     """Returns true if the symbol with index i is in S"""
-    return (S & (1 << i)) == 1
+    return (S & (1 << i)) == 0
 
 
 def optional_list(l):

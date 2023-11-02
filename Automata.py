@@ -50,17 +50,17 @@ class NFATransducer(AbstractTransducer):
 
     def __init__(self, alphabet_map):
         self.state_count = 0
-        self.initial_state = -1
+        self.initial_states = []
         self.final_states = []
         self.alphabet_map = alphabet_map
         self.transitions = Storage.SimpleStorageNFA(0, alphabet_map.get_num_symbols_in_sigma_x_sigma())
         self.statistics = Storage.Statistics()
 
-    def get_initial_state(self):
-        return self.initial_state
+    def get_initial_states(self):
+        return self.initial_states
 
-    def set_initial_state(self, initial_state):
-        self.initial_state = initial_state
+    def add_initial_state(self, initial_state):
+        self.initial_states.append(initial_state)
 
     def is_final_state(self, state):
         return state in self.final_states

@@ -10,6 +10,7 @@ from itertools import *
 def build_token_parsing_input_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
     transducer = Automata.NFATransducer(alph_map)
+    transducer.state_count = 3
     transducer.set_initial_state(0)
     transducer.add_final_state(1)
 
@@ -24,11 +25,11 @@ def build_bad_word_token_parsing_transducer():
     transducer.set_initial_state(0)
     transducer.add_final_state(2)
 
-    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    transducer.add_transition(0, alph_map.combine_symbols('t', 'n'), 1)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 2)
-    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
+    transducer.add_transition(2, alph_map.combine_symbols('t', 't'), 2)
     return transducer
 
 
@@ -40,7 +41,7 @@ def build_simple_token_passing_transducer(as_NFA):
     else:
         transducer = Automata.Transducer(3, alph_map)
 
-    transducer.initial_state = 0
+    transducer.add_initial_state(0)
     transducer.add_final_state(2)
 
     transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
@@ -110,7 +111,11 @@ def collatz_transducer(as_NFA):
 
 
 if __name__ == '__main__':
-    Algorithms.step_game([0,1], 0, 0, [0,1,2], build_simple_token_passing_transducer(False),  True)
+    #Algorithms.built_sigma_sigma_transducer(build_simple_token_passing_transducer(False), True)
+
+
+
+    Algorithms.one_shot(build_simple_token_passing_transducer(False))
     """
     I = build_token_parsing_input_transducer()
     T = build_simple_token_passing_transducer(False)
@@ -118,6 +123,8 @@ if __name__ == '__main__':
     T_prime = Algorithms.verify(I, T, B)
     print(T_prime.get_final_states())
     """
+
+
     
 
 
