@@ -3,7 +3,7 @@ import math
 from Automata import NFATransducer
 import Storage
 import numpy as np
-from Util import Triple
+from Util import Triple, symbol_in_seperator, strS
 from itertools import chain, combinations, product, permutations
 
 
@@ -35,7 +35,7 @@ def transition_iterator(T):
 def build_v_trap(alph_map):
     transducer = NFATransducer(alph_map)
     transducer.set_initial_state(0)
-    transducer.add_final_state(1)
+    transducer.add_final_state(0)
 
     for (q, (x, y)) in product(range(0, 2), product(alph_map.sigma_iterator(), alph_map.sigma_iterator())):
         if q == 0 and x != y:
@@ -49,7 +49,7 @@ def verify(I, T, B):
     S = built_sigma_sigma_transducer(T, True)
     v_trap = build_v_trap(S.get_alphabet_map())
     trap_join = S.join(v_trap)
-    return I.join(trap_join)
+    return (I.join(trap_join)).join(B)
 
 
 def built_sigma_sigma_transducer(T, logging):
@@ -59,13 +59,15 @@ def built_sigma_sigma_transducer(T, logging):
     column_hashing = Storage.ColumnHashing(True)
 
     s_s_transducer.set_initial_state(hash_state([T.get_initial_state()], 1))
-
+    ctr = 0
     for ((c1, c2), (u, S)) in transition_iterator(T):
         winning_strategy = step_game(c1, u, S, c2, T, False)
         if winning_strategy:
             origin_hash = hash_state(c1, 1)
             target_hash = hash_state(c2, 1)
             for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
+                print("ctr = " + str(ctr))
+                ctr = ctr + 1
                 s_s_transducer.add_transition(origin_hash, alph_m.combine_x_and_y(y, u), target_hash)
                 if set(c1).issubset(set(T.get_final_states())):
                     s_s_transducer.add_final_state(origin_hash)
@@ -81,10 +83,10 @@ def built_sigma_sigma_transducer(T, logging):
 def log_sigma_sigma_step(origin_hash, target_hash, c1, c2, y, u, column_hashing, alph_m):
     column_hashing.store_column(origin_hash, c1)
     column_hashing.store_column(target_hash, c2)
-    #print(column_hashing.get_column_str(origin_hash, ) + ", " +
+    # print(column_hashing.get_column_str(origin_hash, ) + ", " +
     #      alph_m.transition_to_str(alph_m.combine_x_and_y(y, u)) + ", " +
     #      column_hashing.get_column_str(target_hash))
-    #print("----------------------------")
+    # print("----------------------------")
 
 
 # c1:            an array of the states in the from-column
@@ -96,6 +98,7 @@ def step_game(c1, u, S, c2, T, logging):
     """Returns a winning strategy if the transition (c1, [u,S], c2) is part of the sigma x sigma transducer"""
     alphabet_map = T.get_alphabet_map()
     game_state = Triple(0, refine_seperator(alphabet_map.get_bit_map_sigma(), u), 0)  # Initialize game_state <l,I,r>
+    game_state_tmp = Triple(-1, 0, -1)
     winning_strategy = []  # List of <q, x_y, p>
     n = len(c1)
     m = len(c2)
@@ -104,23 +107,18 @@ def step_game(c1, u, S, c2, T, logging):
     cur_c2 = slice_column(c2, game_state.r)
     progress = 1  # keep track if all possible transitions are losing -> progress = 0 => step game is lost
 
-    p_visited = []  # keep track which winning p have been visited from q TODO: Replace with bitmap
-
-
-    while progress:
+    while not game_state_tmp.equal(game_state):
+        game_state_tmp.copy(game_state)
         q = (c1[n - 1], c1[np.clip(0, n - 1, game_state.l)])[game_state.l < n]
-        progress = 0
         for x_y in alphabet_map.sigma_x_sigma_iterator():
             p = T.get_successor(q, x_y)
-            if p != -1 and p not in p_visited:
+            if p != -1:
                 # Verifies the 3 conditions to see if <q,[x,y],p> is part of winning strategy
                 q_in_c1 = (q in cur_c1, q == c1[np.clip(0, n - 1, game_state.l)])[game_state.l < n]
                 p_in_c2 = (p in cur_c2, p == c2[np.clip(0, m - 1, game_state.r)])[game_state.r < m]
-                y_not_in_I = symbol_not_in_seperator(game_state.I, alphabet_map.get_y(x_y))
+                y_not_in_I = not symbol_in_seperator(game_state.I, alphabet_map.get_y(x_y))
 
                 if q_in_c1 and p_in_c2 and y_not_in_I:
-                    p_visited.append(p)
-                    progress = 1
                     winning_strategy.append([q, x_y, p])
 
                     # Update the game state and current columns
@@ -170,14 +168,5 @@ def log_step(n, m, S, c1, c2, cur_c1, cur_c2, q, x_y, p, game_state, alphabet_ma
     print("c2: " + str(c2) + " | cur_c2: " + str(cur_c2))
     print("cur_trans: <" + str(q) + ", " + str(alphabet_map.transition_to_str(x_y)) + ", " + str(p) + ">")
     print("game_state: " + str(game_state))
-def strS(S):
-    if S == 0:
-        return "[]"
-    if S == 1:
-        return "[n]"
-    if S == 2:
-        return "[t]"
-    else:
-        return "[n, t]"
 
 

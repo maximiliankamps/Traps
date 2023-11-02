@@ -25,9 +25,9 @@ def build_bad_word_token_parsing_transducer():
     transducer.add_final_state(2)
 
     transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 'n'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
-    transducer.add_transition(1, alph_map.combine_symbols('t', 't'), 2)
+    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 2)
     transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
     return transducer
 
@@ -110,25 +110,14 @@ def collatz_transducer(as_NFA):
 
 
 if __name__ == '__main__':
-    T = build_simple_token_passing_transducer(False)
-    I = build_token_parsing_input_transducer()
-
-    x = Algorithms.verify(I, T, 0)
-    x.to_dot("joined", None)
-    print(x.get_final_states())
-
+    Algorithms.step_game([0,1], 0, 0, [0,1,2], build_simple_token_passing_transducer(False),  True)
     """
     I = build_token_parsing_input_transducer()
     T = build_simple_token_passing_transducer(False)
     B = build_bad_word_token_parsing_transducer()
-    T.to_dot("simple", None)
     T_prime = Algorithms.verify(I, T, B)
-    T_prime.to_dot("final", None)
     print(T_prime.get_final_states())
-    
-    result = Algorithms.verify(I, T, B)
-    result.to_dot("joined", None)
-    print(result.get_final_states())
     """
+    
 
 
