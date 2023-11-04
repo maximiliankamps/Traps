@@ -4,7 +4,7 @@ from Automata import NFATransducer
 import Storage
 import numpy as np
 from Util import Triple, strS
-from itertools import chain, combinations, product, permutations
+from itertools import chain, product, permutations
 
 
 def hash_state(column_list, byte_length):  # TODO: Produces collisions
@@ -39,6 +39,7 @@ def verify(I, T, B):
 
 
 def one_shot(I, T, B):
+    ctr = 0
     alph_m = T.get_alphabet_map()
     column_hashing = Storage.ColumnHashing(True)
     sst = NFATransducer(alph_m)
@@ -47,7 +48,14 @@ def one_shot(I, T, B):
     visited_queue = initial_state_permutations(T)
 
     while len(work_queue) != 0:
+        ctr += 1
         c1 = work_queue.pop(0)
+
+        if ctr % 10 == 0:
+            print(c1)
+            if len((I.join(sst)).join(B).get_final_states()) != 0:
+                return True
+
         c1_hash = hash_state(c1, 1)
         # Add final states to the sigma x sigma transducer
         if set(c1).issubset(set(T.get_final_states())):

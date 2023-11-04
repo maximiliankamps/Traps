@@ -1,11 +1,9 @@
-import numpy as np
-from scipy.sparse import random, dok_array
+import time
 
 import Algorithms
 import Automata
 import Storage
-from itertools import *
-
+from JSONParser import rts_from_json
 
 def build_token_parsing_input_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
@@ -19,6 +17,7 @@ def build_token_parsing_input_transducer():
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
     return transducer
 
+
 def build_bad_word_token_parsing_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
     transducer = Automata.NFATransducer(alph_map)
@@ -27,7 +26,7 @@ def build_bad_word_token_parsing_transducer():
     transducer.set_state_count(3)
 
     transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
     transducer.add_transition(1, alph_map.combine_symbols('t', 't'), 2)
     transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
@@ -54,8 +53,6 @@ def build_simple_token_passing_transducer(as_NFA):
     transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
     return transducer
 
-
-# TODO: build simple_token_transducer by hand and compare with code
 
 def build_circular_token_passing_transducer():
     alph_map = Storage.AlphabetMap(['n', 't'])
@@ -117,17 +114,24 @@ def collatz_transducer(as_NFA):
     return transducer
 
 
+"""
 if __name__ == '__main__':
-    #collatz_transducer(True).join(collatz_transducer(True))
+    # collatz_transducer(True).join(collatz_transducer(True))
 
     I = build_token_parsing_input_transducer()
     T = build_simple_token_passing_transducer(True)
     B = build_bad_word_token_parsing_transducer()
 
+    start_time = time.time()
     print(Algorithms.one_shot(I, T, B))
+    end_time = time.time()
 
+    # Calculate elapsed time
+    elapsed_time = end_time - start_time
+    print("Elapsed time: ", elapsed_time * 1000, "ms")
+"""
 
-
-    
-
-
+if __name__ == '__main__':
+    filename = "token-passing.json"
+    file = open(f'benchmark/{filename}')
+    # rts_from_json("token-passing.json")

@@ -115,7 +115,6 @@ class NFATransducer(AbstractTransducer):
         c_hash = Storage.ColumnHashing(True)
 
         # Add the initial states to T_new
-        initial_state_hashes = list(map(lambda x: Algorithms.hash_state(x, 1), W))
         T_new.init_initial_states(list(map(lambda x: Algorithms.hash_state(x, 1), W)))
 
         while W:
