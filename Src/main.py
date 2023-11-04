@@ -1,90 +1,15 @@
+import os
 import time
 
 import Algorithms
 import Automata
 import Storage
-from JSONParser import rts_from_json
-
-def build_token_parsing_input_transducer():
-    alph_map = Storage.AlphabetMap(['n', 't'])
-    transducer = Automata.NFATransducer(alph_map)
-    transducer.set_state_count(2)
-    transducer.add_initial_state(0)
-    transducer.add_final_state(1)
-
-    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
-    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
-    return transducer
 
 
-def build_bad_word_token_parsing_transducer():
-    alph_map = Storage.AlphabetMap(['n', 't'])
-    transducer = Automata.NFATransducer(alph_map)
-    transducer.add_initial_state(0)
-    transducer.add_final_state(2)
-    transducer.set_state_count(3)
-
-    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 1)
-    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
-    transducer.add_transition(1, alph_map.combine_symbols('t', 't'), 2)
-    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
-    return transducer
-
-
-def build_simple_token_passing_transducer(as_NFA):
-    alph_map = Storage.AlphabetMap(['n', 't'])
-    transducer = None
-    if as_NFA:
-        transducer = Automata.NFATransducer(alph_map)
-    else:
-        transducer = Automata.Transducer(3, alph_map)
-
-    transducer.add_initial_state(0)
-    transducer.add_final_state(2)
-    transducer.set_state_count(3)
-
-    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
-    transducer.add_transition(0, alph_map.combine_symbols('t', 'n'), 1)
-
-    transducer.add_transition(1, alph_map.combine_symbols('n', 't'), 2)
-
-    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
-    return transducer
-
-
-def build_circular_token_passing_transducer():
-    alph_map = Storage.AlphabetMap(['n', 't'])
-    trans = Automata.NFATransducer(alph_map)
-    trans.add_initial_state(0)
-    trans.add_final_state(3)
-    trans.add_final_state(5)
-    trans.set_state_count(6)
-
-    trans.add_transition(0, alph_map.combine_symbols('n', 'n'), 1)
-    trans.add_transition(0, alph_map.combine_symbols('t', 'n'), 2)
-    trans.add_transition(0, alph_map.combine_symbols('n', 't'), 4)
-
-    trans.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
-    trans.add_transition(1, alph_map.combine_symbols('t', 'n'), 2)
-
-    trans.add_transition(2, alph_map.combine_symbols('n', 't'), 3)
-
-    trans.add_transition(3, alph_map.combine_symbols('n', 'n'), 3)
-
-    trans.add_transition(4, alph_map.combine_symbols('n', 'n'), 4)
-    trans.add_transition(4, alph_map.combine_symbols('t', 'n'), 5)
-    return trans
-
-
-def collatz_transducer(as_NFA):
+def collatz_transducer():
     alph_map = Storage.AlphabetMap(['0', '1'])
-    transducer = None
-    if as_NFA:
-        transducer = Automata.NFATransducer(alph_map)
-    else:
-        transducer = Automata.Transducer(7, alph_map)
+    transducer = Automata.NFATransducer(alph_map)
+
     transducer.initial_states.append(1)
     transducer.final_states = [1, 2, 6]
 
@@ -114,12 +39,57 @@ def collatz_transducer(as_NFA):
     return transducer
 
 
+def build_token_parsing_input_transducer():
+    alph_map = Storage.AlphabetMap(['n', 't'])
+    transducer = Automata.NFATransducer(alph_map)
+    transducer.set_state_count(2)
+    transducer.add_initial_state(0)
+    transducer.add_final_state(1)
+
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
+    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
+    return transducer
+
+
+def build_bad_word_token_parsing_transducer():
+    alph_map = Storage.AlphabetMap(['n', 't'])
+    transducer = Automata.NFATransducer(alph_map)
+    transducer.add_initial_state(0)
+    transducer.add_final_state(2)
+    transducer.set_state_count(3)
+
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 't'), 1)
+    transducer.add_transition(1, alph_map.combine_symbols('n', 'n'), 1)
+    transducer.add_transition(1, alph_map.combine_symbols('t', 't'), 2)
+    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
+    return transducer
+
+
+def build_simple_token_passing_transducer():
+    alph_map = Storage.AlphabetMap(['n', 't'])
+    transducer = Automata.NFATransducer(alph_map)
+
+    transducer.add_initial_state(0)
+    transducer.add_final_state(2)
+    transducer.set_state_count(3)
+
+    transducer.add_transition(0, alph_map.combine_symbols('n', 'n'), 0)
+    transducer.add_transition(0, alph_map.combine_symbols('t', 'n'), 1)
+
+    transducer.add_transition(1, alph_map.combine_symbols('n', 't'), 2)
+
+    transducer.add_transition(2, alph_map.combine_symbols('n', 'n'), 2)
+    return transducer
+
+
 """
 if __name__ == '__main__':
     # collatz_transducer(True).join(collatz_transducer(True))
 
     I = build_token_parsing_input_transducer()
-    T = build_simple_token_passing_transducer(True)
+    T = build_simple_token_passing_transducer()
     B = build_bad_word_token_parsing_transducer()
 
     start_time = time.time()
@@ -129,9 +99,14 @@ if __name__ == '__main__':
     # Calculate elapsed time
     elapsed_time = end_time - start_time
     print("Elapsed time: ", elapsed_time * 1000, "ms")
-"""
 
+"""
 if __name__ == '__main__':
-    filename = "token-passing.json"
-    file = open(f'benchmark/{filename}')
-    # rts_from_json("token-passing.json")
+    rts = Automata.RTS("token-passing.json")
+
+    start_time = time.time()
+    print(Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("manytoken")))
+    end_time = time.time()
+
+    elapsed_time = end_time - start_time
+    print("Elapsed time: ", elapsed_time * 1000, "ms")

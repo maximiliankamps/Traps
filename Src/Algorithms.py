@@ -7,7 +7,7 @@ from Util import Triple, strS
 from itertools import chain, product, permutations
 
 
-def hash_state(column_list, byte_length):  # TODO: Produces collisions
+def hash_state(column_list, byte_length):
     """Combines all states in column_list in to a string and returns a hash of byte_length"""
     state_str = ""
     for state in column_list:
@@ -44,24 +44,22 @@ def one_shot(I, T, B):
     column_hashing = Storage.ColumnHashing(True)
     sst = NFATransducer(alph_m)
     work_queue = initial_state_permutations(T)
-    sst.init_initial_states(list(map(lambda x: hash_state(list(x), 1), initial_state_permutations(T))))
+    sst.add_initial_state_list(list(map(lambda x: hash_state(list(x), 1), initial_state_permutations(T))))
     visited_queue = initial_state_permutations(T)
 
     while len(work_queue) != 0:
         ctr += 1
         c1 = work_queue.pop(0)
 
-        if ctr % 10 == 0:
-            print(c1)
-            if len((I.join(sst)).join(B).get_final_states()) != 0:
-                return True
+        # if len((I.join(sst)).join(B).get_final_states()) != 0:  # TODO: Optimize this check
+        #    return "Reachable"
 
         c1_hash = hash_state(c1, 1)
         # Add final states to the sigma x sigma transducer
         if set(c1).issubset(set(T.get_final_states())):
             sst.add_final_state(c1_hash)
             if len((I.join(sst)).join(B).get_final_states()) != 0:
-                return True
+                return "Reachable"
 
         for c2, (u, S) in transition_iterator(T):
             if step_game(c1, u, S, c2, T, False):
@@ -75,7 +73,7 @@ def one_shot(I, T, B):
                 # Add transitions for c1, c2
                 for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
                     sst.add_transition(c1_hash, alph_m.combine_x_and_y(y, u), c2_hash)
-    return False
+    return "not Reachable"
 
 
 # c1:            an array of the states in the from-column
