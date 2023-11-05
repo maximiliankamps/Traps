@@ -4,7 +4,7 @@ from Util import *
 
 # TODO: Check if not set intermediate I_tmp can cause problem
 #  (shouldn't be the case if columns are explored in strict order)
-class ColumnMemoization:
+class StepGameMemo:
     """Memorizes Steps in the Step game as a tree"""
 
     def __init__(self, node_size):
@@ -101,9 +101,20 @@ class Node:
         return string_acc
 
 
-if __name__ == '__main__':
-    i = ColumnMemoization(10)
-    i.add_node([0, 1], [0, 2], 0, 1, 0b111, False)
-    i.add_node([1], [1], 0, 1, 0b101, True)
-    print(i)
-    print(i.check_step([0, 5, 5], [0, 1, 2, 3], 0, 1, 0))
+class StepGameMemoSimple:
+    def __init__(self, size):
+        self.size = size
+        self.step_dict = {}
+
+    def add_step(self, c1, c2, u, S, game_state):
+        key = (c1, c2, u, S)
+        if self.size > 0 and self.step_dict.get(key) is None:
+            self.step_dict[key] = game_state
+            self.size -= 1
+
+    def check_step(self, c1, c2, u, S, old_game_state):
+        new_game_state = self.step_dict.get((c1, c2, u, S))
+        if new_game_state is not None:
+            return new_game_state
+        return old_game_state
+

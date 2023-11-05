@@ -5,6 +5,7 @@ import Storage
 import numpy as np
 from Util import Triple, strS
 from itertools import chain, product, permutations
+from Optimizations import StepGameMemo
 
 
 def hash_state(column_list, byte_length):
@@ -39,16 +40,14 @@ def verify(I, T, B):
 
 
 def one_shot(I, T, B):
-    ctr = 0
+    step_memo = StepGameMemo(0)
     alph_m = T.get_alphabet_map()
-    column_hashing = Storage.ColumnHashing(True)
     sst = NFATransducer(alph_m)
     work_queue = initial_state_permutations(T)
     sst.add_initial_state_list(list(map(lambda x: hash_state(list(x), 1), initial_state_permutations(T))))
     visited_queue = initial_state_permutations(T)
 
     while len(work_queue) != 0:
-        ctr += 1
         c1 = work_queue.pop(0)
 
         # if len((I.join(sst)).join(B).get_final_states()) != 0:  # TODO: Optimize this check
@@ -62,17 +61,18 @@ def one_shot(I, T, B):
                 return "Reachable"
 
         for c2, (u, S) in transition_iterator(T):
-            if step_game(c1, u, S, c2, T, False):
+            if step_game(c1, u, S, c2, T, False, step_memo):
                 # Add c2 to the work queue
                 if c2 not in visited_queue:
                     work_queue.append(c2)
                     visited_queue.append(c2)
                 # Hash the states
                 c2_hash = hash_state(c2, 1)
-                column_hashing.store_column(c1_hash, c1), column_hashing.store_column(c2_hash, c2)
                 # Add transitions for c1, c2
                 for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
                     sst.add_transition(c1_hash, alph_m.combine_x_and_y(y, u), c2_hash)
+
+    print(step_memo.node_size)
     return "not Reachable"
 
 
@@ -81,10 +81,17 @@ def one_shot(I, T, B):
 # S:             a bit map encoding the seperator
 # c2:            an array of the states in the to-column
 # T:             the transducer T
-def step_game(c1, u, S, c2, T, logging):
+def step_game(c1, u, S, c2, T, logging, step_memo):
     """Returns a winning strategy if the transition (c1, [u,S], c2) is part of the sigma x sigma transducer"""
     alphabet_map = T.get_alphabet_map()
     game_state = Triple(0, refine_seperator(alphabet_map.get_bit_map_sigma(), u), 0)  # Initialize game_state <l,I,r>
+
+    game_state = step_memo.check_step(c1, c2, u, S, refine_seperator(alphabet_map.get_bit_map_sigma(), u))
+
+    if game_state is None:
+        #print("<S: " + strS(S) + ", c1 " + str(c1) + ", c2 " + str(c2) + "> excluded")
+        return False
+
     game_state_tmp = Triple(-1, 0, -1)
     n = len(c1)
     m = len(c2)
@@ -97,7 +104,7 @@ def step_game(c1, u, S, c2, T, logging):
         for q, x_y in product(c1, alphabet_map.sigma_x_sigma_iterator()):
             p = T.get_successor(q, x_y)
             if p is not None:
-                p = p[0]  # TODO: This is a temporary fix
+                p = p[0]  # TODO: This is a temporary fix, access the firs successor (there could be more)
 
                 # Verifies the 3 conditions to see if <q,[x,y],p> is part of winning strategy
                 q_in_c1 = q in cur_c1 or (False, q == c1[np.clip(0, n - 1, game_state.l)])[game_state.l < n]
@@ -112,12 +119,15 @@ def step_game(c1, u, S, c2, T, logging):
                     cur_c1 = slice_column(c1, game_state.l)
                     cur_c2 = slice_column(c2, game_state.r)
 
-                    if logging:
-                        log_step(n, m, S, c1, c2, cur_c1, cur_c2, q, x_y, p, game_state, alphabet_map)
-
                     # Game won
                     if game_state.l == n and game_state.r == m and game_state.I == S:
+                        step_memo.add_node(c1, c2, u, S, refine_seperator(alphabet_map.get_bit_map_sigma(), u), False)
+                        if logging:
+                            log_step(n, m, S, c1, c2, cur_c1, cur_c2, q, x_y, p, game_state, alphabet_map)
                         return True
+
+    if game_state.l < n and game_state.r < m:
+        step_memo.add_node(c1, c2, u, S, -1, True)
     return False
 
 

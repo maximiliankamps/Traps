@@ -149,6 +149,14 @@ class NFATransducer(AbstractTransducer):
                                 T_new.add_transition(q1_q2_hash, a_b, q1_q2_target_hash)
         return T_new
 
+# Matches (.*), |
+def parse_transition_regex(regex, alph_map):
+    m = (map(lambda s: s[0] + "," + s[1], product(alph_map.sigma, alph_map.sigma)))  # create a list of sigma,sigma
+    r = re.compile(regex)
+    return list(map(lambda z: alph_map.combine_symbols(z[0], z[1]),  # map x y -> int
+                    (map(lambda y: y.split(","),                     # remove the ','
+                         filter(lambda x: r.match(x), m)))))         # match all x,y that satisfy the pattern
+
 
 class RTS:
     def __init__(self, filename):
@@ -196,10 +204,6 @@ class RTS:
         transducer.add_initial_state(int(trans_dict["initialState"][1:]))
         transducer.add_final_state_list(list(map(lambda q: int(q[1:]), trans_dict["acceptingStates"])))
         for t in trans_dict["transitions"]:
-            (x, y) = tuple(self.parse_transition_regex(t["letter"]))
-            symbol = alph_map.combine_symbols(x, y)
-            transducer.add_transition(int(t["origin"][1:]), symbol, int(t["target"][1:]))
+            for symbol in parse_transition_regex(t["letter"], alph_map):
+                transducer.add_transition(int(t["origin"][1:]), symbol, int(t["target"][1:]))
         return transducer
-
-    def parse_transition_regex(self, regex):
-        return regex.split(",")

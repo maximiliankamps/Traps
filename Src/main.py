@@ -1,4 +1,5 @@
 import os
+import re
 import time
 
 import Algorithms
@@ -84,29 +85,18 @@ def build_simple_token_passing_transducer():
     return transducer
 
 
-"""
-if __name__ == '__main__':
-    # collatz_transducer(True).join(collatz_transducer(True))
-
-    I = build_token_parsing_input_transducer()
-    T = build_simple_token_passing_transducer()
-    B = build_bad_word_token_parsing_transducer()
-
-    start_time = time.time()
-    print(Algorithms.one_shot(I, T, B))
-    end_time = time.time()
-
-    # Calculate elapsed time
-    elapsed_time = end_time - start_time
-    print("Elapsed time: ", elapsed_time * 1000, "ms")
-
-"""
 if __name__ == '__main__':
     rts = Automata.RTS("token-passing.json")
 
-    start_time = time.time()
-    print(Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("manytoken")))
-    end_time = time.time()
+    time_list = []
+    for i in range(0, 10):
+        start_time = time.time()
+        Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("manytoken"))
+        end_time = time.time()
 
-    elapsed_time = end_time - start_time
-    print("Elapsed time: ", elapsed_time * 1000, "ms")
+        elapsed_time = end_time - start_time
+        time_list.append(elapsed_time)
+        #print("Elapsed time: ", elapsed_time * 1000, "ms")
+    print("Average time: ", sum(time_list) / len(time_list) * 1000, "ms")
+
+
