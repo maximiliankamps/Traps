@@ -89,9 +89,9 @@ if __name__ == '__main__':
     rts = Automata.RTS("token-passing.json")
 
     time_list = []
-    for i in range(0, 10):
+    for i in range(0, 1):
         start_time = time.time()
-        Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("manytoken"))
+        print(Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("notoken")))
         end_time = time.time()
 
         elapsed_time = end_time - start_time

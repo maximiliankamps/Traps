@@ -5,7 +5,7 @@ import Storage
 import numpy as np
 from Util import Triple, strS
 from itertools import chain, product, permutations
-from Optimizations import StepGameMemo
+from Optimizations import StepGameMemo, StepGameMemo2
 
 
 def hash_state(column_list, byte_length):
@@ -40,7 +40,7 @@ def verify(I, T, B):
 
 
 def one_shot(I, T, B):
-    step_memo = StepGameMemo(0)
+    step_memo = StepGameMemo2()
     alph_m = T.get_alphabet_map()
     sst = NFATransducer(alph_m)
     work_queue = initial_state_permutations(T)
@@ -58,6 +58,9 @@ def one_shot(I, T, B):
         if set(c1).issubset(set(T.get_final_states())):
             sst.add_final_state(c1_hash)
             if len((I.join(sst)).join(B).get_final_states()) != 0:
+                # print("Chache size left: " + str(step_memo.node_size))
+                # print("total checked: " + str(step_memo.total_checks))
+                # print("total exluded: " + str(step_memo.total_excluded))
                 return "Reachable"
 
         for c2, (u, S) in transition_iterator(T):
@@ -72,7 +75,9 @@ def one_shot(I, T, B):
                 for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
                     sst.add_transition(c1_hash, alph_m.combine_x_and_y(y, u), c2_hash)
 
-    print(step_memo.node_size)
+    print("Chache size left: " + str(step_memo.node_size))
+    print("total checked: " + str(step_memo.total_checks))
+    print("total exluded: " + str(step_memo.total_excluded))
     return "not Reachable"
 
 
