@@ -149,13 +149,15 @@ class NFATransducer(AbstractTransducer):
                                 T_new.add_transition(q1_q2_hash, a_b, q1_q2_target_hash)
         return T_new
 
+
 # Matches (.*), |
-def parse_transition_regex(regex, alph_map):
-    m = (map(lambda s: s[0] + "," + s[1], product(alph_map.sigma, alph_map.sigma)))  # create a list of sigma,sigma
-    r = re.compile(regex)
+def parse_transition_regex(regex, alph_map, id):
+    m = (map(lambda s: s[0] + "," + s[1],  # create a list of sigma,sigma
+             (product(alph_map.sigma, alph_map.sigma), zip(alph_map.sigma, alph_map.sigma))[id]))
+    r = re.compile(((regex, f'{regex},{regex}')[id]))
     return list(map(lambda z: alph_map.combine_symbols(z[0], z[1]),  # map x y -> int
-                    (map(lambda y: y.split(","),                     # remove the ','
-                         filter(lambda x: r.match(x), m)))))         # match all x,y that satisfy the pattern
+                    (map(lambda y: y.split(","),  # remove the ','
+                         filter(lambda x: r.match(x), m)))))  # match all x,y that satisfy the pattern
 
 
 class RTS:
@@ -183,10 +185,10 @@ class RTS:
         transducer_dict = rts_dict["transducer"]
         properties_dict = rts_dict["properties"]
 
-        self.I = self.built_id_transducer(initial_dict, alphabet_map)
-        self.T = self.build_transducer(transducer_dict, alphabet_map)
+        self.I = (self.built_id_transducer(initial_dict, alphabet_map))
+        self.T = self.build_transducer(transducer_dict, alphabet_map, False)
 
-        self.B_dict = {name: self.built_id_transducer(properties_dict[name], alphabet_map) for name in properties_dict}
+        self.B_dict = {name: self.build_transducer(properties_dict[name], alphabet_map, True) for name in properties_dict}
 
     def built_id_transducer(self, nfa_dict, alph_map):
         id_transducer = NFATransducer(alph_map)
@@ -198,12 +200,12 @@ class RTS:
             id_transducer.add_transition(int(t["origin"][1:]), symbol, int(t["target"][1:]))
         return id_transducer
 
-    def build_transducer(self, trans_dict, alph_map):
+    def build_transducer(self, trans_dict, alph_map, id):
         transducer = NFATransducer(alph_map)
         transducer.set_state_count(len(trans_dict["states"]))
         transducer.add_initial_state(int(trans_dict["initialState"][1:]))
         transducer.add_final_state_list(list(map(lambda q: int(q[1:]), trans_dict["acceptingStates"])))
         for t in trans_dict["transitions"]:
-            for symbol in parse_transition_regex(t["letter"], alph_map):
+            for symbol in parse_transition_regex(t["letter"], alph_map, id):
                 transducer.add_transition(int(t["origin"][1:]), symbol, int(t["target"][1:]))
         return transducer

@@ -20,8 +20,12 @@ class StepGameMemo2:
     def encode(self, c1, c2, u, S):
         u_bin = self.zero_padding(format(u, "b"), self.u_bits_num)
         S_bin = self.zero_padding(format(S, "b"), self.S_bits_num)
-        c1_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c1)))
-        c2_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c2)))
+        c1_bin = ""
+        c2_bin = ""
+        if c1 is not None:
+            c1_bin = ("".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c1))))
+        if c2 is not None:
+            c2_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c2)))
 
         return bitarray.bitarray(u_bin + S_bin + c1_bin + c2_bin)
 
@@ -41,6 +45,9 @@ class StepGameMemo2:
         return self.f
 
     def check_step(self, c1, c2, u, S, I):
+        if self.f is None:
+            return 0
+
         encoding = self.encode(c1, c2, u, S)
 
         point = {self.bdd_vars[i]: bit for (i, bit) in enumerate(encoding)}

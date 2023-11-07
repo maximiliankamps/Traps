@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from itertools import *
 from Util import *
 import math
@@ -6,16 +7,34 @@ from pyeda.inter import *
 import bitarray
 
 
-# TODO: Check if not set intermediate I_tmp can cause problem
-#  (shouldn't be the case if columns are explored in strict order)
-class StepGameMemo:
-    """Memorizes Steps in the Step game as a tree"""
+class AbstractStepGameMemo(ABC):
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def add_node(self, c1, c2, u, S, I, miss):
+        pass
+
+    @abstractmethod
+    def check_step(self, c1, c2, u, S, initial_I):
+        pass
+
+    @abstractmethod
+    def print_statistics(self):
+        pass
+
+
+class StepGameMemo(AbstractStepGameMemo):
+    """Memorizes Steps in the Step Game as a tree"""
 
     def __init__(self, node_size):
         self.node_size = node_size
         self.root_nodes = {}
         self.total_checks = 0
         self.total_excluded = 0
+        self.total_advanced = 0
 
     def add_node(self, c1, c2, u, S, I, miss):
         """
@@ -66,8 +85,16 @@ class StepGameMemo:
                 return None
             game_state.update(b1, b2, current.get_I_tmp())
             current = current.get_next(b1, b2)
+        if game_state.l != 0 or game_state.r != 0:
+            self.total_advanced += 1
         game_state.xor_I(initial_I)  # Remove all symbols that have been removed in pre-computation
         return game_state
+
+    def print_statistics(self):
+        print("Chache size left: " + str(self.node_size))
+        print("total checked: " + str(self.total_checks))
+        print("total excluded: " + str(self.total_excluded))
+        print("total advanced: " + str(self.total_advanced))
 
     def __str__(self):
         string_acc = ""
@@ -109,25 +136,8 @@ class Node:
         return string_acc
 
 
-class StepGameMemoSimple:
-    def __init__(self, size):
-        self.size = size
-        self.step_dict = {}
-
-    def add_step(self, c1, c2, u, S, game_state):
-        key = (c1, c2, u, S)
-        if self.size > 0 and self.step_dict.get(key) is None:
-            self.step_dict[key] = game_state
-            self.size -= 1
-
-    def check_step(self, c1, c2, u, S, old_game_state):
-        new_game_state = self.step_dict.get((c1, c2, u, S))
-        if new_game_state is not None:
-            return new_game_state
-        return old_game_state
-
-
-class StepGameMemo2:
+class StepGameMemo2(AbstractStepGameMemo):
+    """Memorizes Steps in the Step Game as BDD"""
     def __init__(self, u_bits_num, state_bit_num):
         self.u_bits_num = u_bits_num
         self.S_bits_num = int(math.pow(2, self.u_bits_num))
@@ -135,20 +145,32 @@ class StepGameMemo2:
         self.column_len = int(math.pow(2, self.state_bit_num))
         self.encoding_bit_num = self.u_bits_num + self.S_bits_num + 2 * (self.state_bit_num + self.column_len)
         self.bdd_vars = list(map(lambda b: bddvar(f"b{b}", b), [*range(0, self.encoding_bit_num)]))
+        self.total_checks = 0
+        self.total_excluded = 0
         self.f = None
 
     def zero_padding(self, bin_num, length):
+        """pads bin_num with 0s"""
         return ("0" * (length - len(bin_num))) + bin_num
 
-    def encode(self, c1, c2, u, S):
+    def encode(self, c1, c2, u, S):  # TODO: Needs to become alot faster
+        """encodes c1, c2, u, S as a bitarray bin(u) + bin(S) + bin(c1) + bin(c2)"""
         u_bin = self.zero_padding(format(u, "b"), self.u_bits_num)
         S_bin = self.zero_padding(format(S, "b"), self.S_bits_num)
-        c1_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c1)))
-        c2_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c2)))
+        c1_bin = ""
+        c2_bin = ""
+        if c1 is not None:
+            c1_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c1)))
+        if c2 is not None:
+            c2_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c2)))
 
         return bitarray.bitarray(u_bin + S_bin + c1_bin + c2_bin)
 
-    def add_node(self, c1, c2, u, S, I):
+    def add_node(self, c1, c2, u, S, I, miss):
+        """uses the encoding to set bbd_vars to (u & S & c1 & c2) | f_tmp"""
+        if not miss:
+            return
+
         encoding = self.encode(c1, c2, u, S)
 
         tmp = bddvar("tmp") | ~bddvar("tmp")
@@ -161,18 +183,28 @@ class StepGameMemo2:
             self.f = tmp
         else:
             self.f = self.f | tmp
-        return self.f
 
-    def check_step(self, c1, c2, u, S, I):
+    def check_step(self, c1, c2, u, S, initial_I):
+        if self.f is None:
+            return Triple(0, initial_I, 0)
+        self.total_checks += 1
         encoding = self.encode(c1, c2, u, S)
 
         point = {self.bdd_vars[i]: bit for (i, bit) in enumerate(encoding)}
 
-        return self.f.restrict(point)
+        check = self.f.restrict(point)
+        if check:
+            self.total_excluded += 1
+            return None
+        else:
+            return Triple(0, initial_I, 0)
 
-    def print_dimensions(self):
+    def print_statistics(self):
         print("u bit size: " + str(self.u_bits_num))
         print("S bit size: " + str(self.S_bits_num))
         print("state bit size: " + str(self.state_bit_num))
         print("max column len: " + str(self.column_len))
         print("max encoding length: " + str(self.encoding_bit_num))
+        print("---------------------")
+        print("total checked: " + str(self.total_checks))
+        print("total excluded: " + str(self.total_excluded))

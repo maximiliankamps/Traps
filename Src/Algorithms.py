@@ -40,7 +40,7 @@ def verify(I, T, B):
 
 
 def one_shot(I, T, B):
-    step_memo = StepGameMemo2()
+    step_memo = StepGameMemo(10000000)
     alph_m = T.get_alphabet_map()
     sst = NFATransducer(alph_m)
     work_queue = initial_state_permutations(T)
@@ -50,17 +50,15 @@ def one_shot(I, T, B):
     while len(work_queue) != 0:
         c1 = work_queue.pop(0)
 
-        # if len((I.join(sst)).join(B).get_final_states()) != 0:  # TODO: Optimize this check
-        #    return "Reachable"
+        if len((I.join(sst)).join(B).get_final_states()) != 0:  # TODO: Optimize this check
+            return "Reachable"
 
         c1_hash = hash_state(c1, 1)
         # Add final states to the sigma x sigma transducer
         if set(c1).issubset(set(T.get_final_states())):
             sst.add_final_state(c1_hash)
             if len((I.join(sst)).join(B).get_final_states()) != 0:
-                # print("Chache size left: " + str(step_memo.node_size))
-                # print("total checked: " + str(step_memo.total_checks))
-                # print("total exluded: " + str(step_memo.total_excluded))
+                step_memo.print_statistics()
                 return "Reachable"
 
         for c2, (u, S) in transition_iterator(T):
@@ -74,10 +72,7 @@ def one_shot(I, T, B):
                 # Add transitions for c1, c2
                 for y in bit_map_seperator_to_inv_list(S, alph_m.get_sigma_size()):
                     sst.add_transition(c1_hash, alph_m.combine_x_and_y(y, u), c2_hash)
-
-    print("Chache size left: " + str(step_memo.node_size))
-    print("total checked: " + str(step_memo.total_checks))
-    print("total exluded: " + str(step_memo.total_excluded))
+    step_memo.print_statistics()
     return "not Reachable"
 
 
@@ -92,9 +87,7 @@ def step_game(c1, u, S, c2, T, logging, step_memo):
     game_state = Triple(0, refine_seperator(alphabet_map.get_bit_map_sigma(), u), 0)  # Initialize game_state <l,I,r>
 
     game_state = step_memo.check_step(c1, c2, u, S, refine_seperator(alphabet_map.get_bit_map_sigma(), u))
-
     if game_state is None:
-        #print("<S: " + strS(S) + ", c1 " + str(c1) + ", c2 " + str(c2) + "> excluded")
         return False
 
     game_state_tmp = Triple(-1, 0, -1)
@@ -126,7 +119,7 @@ def step_game(c1, u, S, c2, T, logging, step_memo):
 
                     # Game won
                     if game_state.l == n and game_state.r == m and game_state.I == S:
-                        step_memo.add_node(c1, c2, u, S, refine_seperator(alphabet_map.get_bit_map_sigma(), u), False)
+                        # step_memo.add_node(c1, c2, u, S, refine_seperator(alphabet_map.get_bit_map_sigma(), u), False)
                         if logging:
                             log_step(n, m, S, c1, c2, cur_c1, cur_c2, q, x_y, p, game_state, alphabet_map)
                         return True
