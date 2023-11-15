@@ -1,20 +1,12 @@
 import math
 
-from Automata import NFATransducer
+from Automata import NFATransducer, hash_state
+from enum import Enum
 import Storage
 import numpy as np
 from Util import Triple, strS
 from itertools import chain, product, permutations
 from Optimizations import StepGameMemo, StepGameMemo2
-
-
-def hash_state(column_list, byte_length):
-    """Combines all states in column_list in to a string and returns a hash of byte_length"""
-    state_str = ""
-    for state in column_list:
-        state_str += str(state + 1)  # Important!!! + 1 to generate unique hash for columns with q0 states
-    return int(state_str)
-    # return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
 
 
 def powerset_permutations(iterable, length):
@@ -39,6 +31,18 @@ def verify(I, T, B):
     return 0
 
 
+class ONESHOT:
+    def __init__(self, IxB, T):
+        self.IxB = IxB
+        self.T = T
+        self.alphabet_map = T.get_alphabet_map()
+        self.sst = NFATransducer(self.alphabet_map)
+
+    def one_shot_rec(self, ib, c1):
+        for ixb_t in self.IxB.get_transitions():
+            step_game(c1, )
+
+
 def one_shot(I, T, B):
     step_memo = StepGameMemo(10000000)
     alph_m = T.get_alphabet_map()
@@ -56,13 +60,13 @@ def one_shot(I, T, B):
         c1_hash = hash_state(c1, 1)
         # Add final states to the sigma x sigma transducer
         if set(c1).issubset(set(T.get_final_states())):
-            sst.add_final_state(c1_hash)
             if len((I.join(sst)).join(B).get_final_states()) != 0:
                 step_memo.print_statistics()
                 return "Reachable"
 
         for c2, (u, S) in transition_iterator(T):
             if step_game(c1, u, S, c2, T, False, step_memo):
+                print(str(c1) + " " + str(c2))
                 # Add c2 to the work queue
                 if c2 not in visited_queue:
                     work_queue.append(c2)

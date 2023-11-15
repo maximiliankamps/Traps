@@ -1,4 +1,3 @@
-import Algorithms
 import Storage
 import graphviz as gviz
 from abc import ABC, abstractmethod
@@ -7,6 +6,15 @@ import json
 import re
 
 import Util
+
+
+def hash_state(column_list, byte_length):
+    """Combines all states in column_list in to a string and returns a hash of byte_length"""
+    state_str = ""
+    for state in column_list:
+        state_str += str(state + 1)  # Important!!! + 1 to generate unique hash for columns with q0 states
+    return int(state_str)
+    # return int.from_bytes(hexlify(shake.read(byte_length)), 'big')
 
 
 class AbstractTransducer(ABC):
@@ -83,6 +91,12 @@ class NFATransducer(AbstractTransducer):
         self.statistics.log_transition()
         self.transitions.add_transition(origin, symbol_index, target)
 
+    def get_transitions(self, origin):
+        for symbol in self.alphabet_map.sigma_x_sigma_iterator():
+            target = self.get_successor(origin, symbol)
+            if target != None:
+                yield symbol, target
+
     def get_successor(self, origin, symbol_index):
         return self.transitions.get_successor(origin, symbol_index)
 
@@ -119,11 +133,11 @@ class NFATransducer(AbstractTransducer):
         c_hash = Storage.ColumnHashing(True)
 
         # Add the initial states to T_new
-        T_new.add_initial_state_list(list(map(lambda x: Algorithms.hash_state(x, 1), W)))
+        T_new.add_initial_state_list(list(map(lambda x: hash_state(x, 1), W)))
 
         while W:
             (q1, q2) = W.pop(0)
-            q1_q2_hash = Algorithms.hash_state([q1, q2], 1)
+            q1_q2_hash = hash_state([q1, q2], 1)
             c_hash.store_column(q1_q2_hash, [q1, q2])
 
             if self.is_final_state(q1) and nfa.is_final_state(q2) and q1_q2_hash not in T_new.get_final_states():
@@ -137,7 +151,7 @@ class NFATransducer(AbstractTransducer):
 
                     if q1_target_list is not None and q2_target_list is not None:
                         for (q1_target, q2_target) in product(q1_target_list, q2_target_list):
-                            q1_q2_target_hash = Algorithms.hash_state([q1_target, q2_target], 1)
+                            q1_q2_target_hash = hash_state([q1_target, q2_target], 1)
                             a_b = alph_map.combine_x_and_y(alph_map.get_x(a_c), alph_map.get_y(c_b))
                             c_hash.store_column(q1_q2_target_hash, [q1_target, q2_target])
 
@@ -160,11 +174,23 @@ def parse_transition_regex(regex, alph_map, id):
                          filter(lambda x: r.match(x), m)))))  # match all x,y that satisfy the pattern
 
 
+def parse_transition_regex_dfa(trans_dict, alph_map):
+    transitions = []
+    for t in trans_dict:
+        r = re.compile(t["letter"])
+        q = int(t["origin"][1:])
+        p = int(t["target"][1:])
+        transitions.extend(
+            list(map(lambda y: (q, alph_map.symbol_to_int(y), p), filter(lambda x: r.match(x), alph_map.sigma))))
+    return transitions
+
+
 class RTS:
     def __init__(self, filename):
         self.I = None
         self.T = None
         self.B_dict = None
+        self.alphabet_map = None
         self.rts_from_json(filename)
 
     def get_I(self):
@@ -175,6 +201,9 @@ class RTS:
 
     def get_B(self, property_name):
         return self.B_dict[property_name]
+
+    def get_IxB(self, property_name):
+        return self.build_cross_transducer(self.I, self.B_dict[property_name], self.alphabet_map)
 
     def rts_from_json(self, filename):
         file = open(f'benchmark/{filename}')
@@ -188,7 +217,45 @@ class RTS:
         self.I = (self.built_id_transducer(initial_dict, alphabet_map))
         self.T = self.build_transducer(transducer_dict, alphabet_map, False)
 
-        self.B_dict = {name: self.build_transducer(properties_dict[name], alphabet_map, True) for name in properties_dict}
+        self.B_dict = {name: self.build_transducer(properties_dict[name], alphabet_map, True) for name in
+                       properties_dict}
+
+        self.alphabet_map = alphabet_map
+
+    def build_cross_transducer(self, I_dict, B_dict, alphabet_map):
+
+        t1 = parse_transition_regex_dfa(I_dict["transitions"], alphabet_map)
+        f1 = list(map(lambda q: int(q[1:]), I_dict["acceptingStates"]))
+
+        t2 = parse_transition_regex_dfa(B_dict["transitions"], alphabet_map)
+        f2 = list(map(lambda q: int(q[1:]), B_dict["acceptingStates"]))
+
+        result = NFATransducer(alphabet_map)
+
+        q0 = int(I_dict["initialState"][1:])
+        p0 = int(B_dict["initialState"][1:])
+
+        result.add_initial_state(hash_state([q0, p0], 0))
+
+        Q = [(q0, p0)]
+        W = []
+
+        while len(Q) != 0:
+            (q1, q2) = Q.pop(0)
+            W.append((q1,q2))
+
+            if q1 in f1 and q2 in f2:
+                result.add_final_state(hash_state([q1, q2], 0))
+
+            for (q1_, x, p1) in t1:
+                for (q2_, y, p2) in t2:
+                    if q1 == q1_ and q2 == q2_:
+                        result.add_transition(hash_state([q1_, q2_], 0), alphabet_map.combine_x_and_y(x, y),
+                                              hash_state([p1, p2], 0))
+                        if (p1, p2) not in W:
+                            Q.append((p1, p2))
+        print(result.get_final_states())
+        return result
 
     def built_id_transducer(self, nfa_dict, alph_map):
         id_transducer = NFATransducer(alph_map)

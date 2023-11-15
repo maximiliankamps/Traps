@@ -86,17 +86,22 @@ def build_simple_token_passing_transducer():
 
 
 if __name__ == '__main__':
-    rts = Automata.RTS("berkeley.json")
+    rts = Automata.RTS("token-passing.json")
+    for i in rts.T.get_transitions(0):
+        print(i)
 
+    next(rts.I.get_transitions(0))
+    """
     time_list = []
     for i in range(0, 1):
         start_time = time.time()
-        print(Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("exclusiveexclusive")))
+        print(Algorithms.one_shot(rts.get_I(), rts.get_T(), rts.get_B("notoken")))
         end_time = time.time()
 
         elapsed_time = end_time - start_time
         time_list.append(elapsed_time)
         #print("Elapsed time: ", elapsed_time * 1000, "ms")
     print("Average time: ", sum(time_list) / len(time_list) * 1000, "ms")
+    """
 
 
