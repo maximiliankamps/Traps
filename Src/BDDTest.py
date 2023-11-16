@@ -13,9 +13,8 @@ class StepGameMemo2:
         self.encoding_bit_num = self.u_bits_num + self.S_bits_num + 2 * (self.state_bit_num + self.column_len)
         self.bdd_vars = list(map(lambda b: bddvar(f"b{b}", b), [*range(0, self.encoding_bit_num)]))
         self.f = None
-
     def zero_padding(self, bin_num, length):
-        return ("0" * (length - len(bin_num))) + bin_num
+        return ("0" * (length -     len(bin_num))) + bin_num
 
     def encode(self, c1, c2, u, S):
         u_bin = self.zero_padding(format(u, "b"), self.u_bits_num)
