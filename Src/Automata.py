@@ -107,7 +107,7 @@ class NFATransducer(AbstractTransducer):
     def to_dot(self, filename, column_hashing):
         g = gviz.Digraph('G', filename="Pictures/" + f'{filename}')
 
-        for source in range(0, 100):
+        for source in range(0, 1000000):
             for x in self.alphabet_map.sigma:
                 for y in self.alphabet_map.sigma:
                     target = self.get_successor(source, self.alphabet_map.combine_symbols(x, y))
@@ -256,8 +256,11 @@ class RTS:
             for (q1_, x, p1) in t1:
                 for (q2_, y, p2) in t2:
                     if q1 == q1_ and q2 == q2_:
-                        result.add_transition(hash_state([q1_, q2_], 0), self.alphabet_map.combine_x_and_y(x, y),
-                                              hash_state([p1, p2], 0))
+                        q1_q2_hash = hash_state([q1_, q2_], 0)
+                        p1p2hash = hash_state([p1, p2], 0)
+                        symbol = self.alphabet_map.combine_x_and_y(x, y)
+                        if result.get_successor(q1_q2_hash, symbol) is None or p1p2hash not in result.get_successor(q1_q2_hash, symbol):
+                            result.add_transition(q1_q2_hash, symbol, p1p2hash)
                         if (p1, p2) not in W:
                             Q.append((p1, p2))
         return result

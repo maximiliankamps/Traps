@@ -123,11 +123,7 @@ class AlphabetMap:
         return range(0, self.get_sigma_size())
 
     def sigma_x_sigma_iterator(self):
-        return range(0, self.get_num_symbols_in_sigma_x_sigma())
-
-    # TODO: implement
-    def sigma_x_sigma_id_iterator(self):
-        return iter([self.combine_x_and_y(s, s) for s in range(0, self.get_sigma_size())])
+        return map(lambda x_y: self.combine_x_and_y(x_y[0], x_y[1]), product(self.sigma_iterator(), self.sigma_iterator()))
 
     def get_sigma_size(self):
         """Returns the size of the alphabet sigma """

@@ -39,49 +39,62 @@ class ONESHOT:
         self.sst = NFATransducer(self.alphabet_map)
 
     def one_shot_bfs(self):
-        Q = [(self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])]
-        W = [(self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])]
-
+        col = Storage.ColumnHashing(True)
+        (ib0, c0) = (self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])
+        Q = [(ib0, c0)]
+        W = [(ib0, c0)]
         i = 0
+        trans = 0
         while len(Q) != 0:
             (ib, c) = Q.pop(0)
-
             # iterate over all transitions of the state ib
-            for (ib_t, ib_succ) in self.IxB.get_transitions(ib):
-                gs = Triple(0, 0, 0)
-                S = refine_seperator(self.alphabet_map.get_bit_map_sigma(), self.alphabet_map.get_y(ib_t))
+            for (ib_trans, ib_succ) in self.IxB.get_transitions(ib):
+                u, v = self.alphabet_map.get_y(ib_trans), self.alphabet_map.get_x(ib_trans)
+                gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
                 # iterate over all reachable (ib, c) -> (ib_succ, d)
-                for d in self.step_game_gen(c, [], S, gs):
+
+                for d in self.step_game_gen(c, [], v, gs, []):
+                    trans += 1
+                    self.sst.add_transition(hash_state(c + [ib], 0), ib_trans, hash_state(d + [ib_succ], 0))
+                    col.store_column(hash_state(c + [ib], 0), c + [ib])
+                    col.store_column(hash_state(d + [ib_succ], 0), d + [ib_succ])
                     if (ib_succ, d) not in W:
-                        i += 1
-                        print(i)
                         W.append((ib_succ, d))
                         Q.append((ib_succ, d))
+                        i += 1
+                        print(i)
 
-                    #print((ib_t, ib_p, d))
-                    if self.IxB.is_final_state(ib_succ) and len(
-                            list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-
-                            print("reachable")
+                        if self.IxB.is_final_state(ib_succ) and len(
+                                list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
+                            print(f'{ib_succ}, {d}')
+                            print("Result: x")
                             return 0
-        print(i)
-        print("not reachable")
+        print("transitions: " + str(trans))
+        print("Result: ✓")
         return 0
 
-    def step_game_gen(self, c1, c2, S, gs):
-        # Iterate over all transitions of q elem c1[:l+1]
+    def step_game_gen(self, c1, c2, v, gs, visited):
+        if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):
+            visited.append(c2)
+            yield c2
         for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
-            # Iterate over transition symbol and successors p
             for (qp_t, p) in trans_gen:
+                i = self.alphabet_map.transition_to_str(qp_t)
                 x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
-                # qp_t is a valid transition and c2 hasn't been visited yet return c2
-                if symbol_not_in_seperator(S, y) and p not in c2:
-                    c2_ = c2 + [p]
-                    yield c2_
-                    S_ = refine_seperator(S, x)
-                    gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]], gs.I, gs.r + 1)
-                    # continue with updated c2
-                    yield from self.step_game_gen(c1, c2_, S_, gs_)
+                if symbol_not_in_seperator(gs.I, y):
+                    c2_ = []
+                    if p not in c2:
+                        c2_ = c2 + [p]
+                        if c2_ in visited:
+                            break
+                    else:
+                        c2_ = c2
+                    gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
+                                 refine_seperator(gs.I, x),
+                                 gs.r + (1, 0)[p in c2])
+                    if not gs.equal(gs_):
+                        yield from self.step_game_gen(c1, c2_, v, gs_, visited)
+
 
 
 def one_shot(I, T, B):

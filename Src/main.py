@@ -86,17 +86,18 @@ def build_simple_token_passing_transducer():
 
 
 if __name__ == '__main__':
-    rts = Automata.RTS("Herman.json")
+    rts = Automata.RTS("dining-cryptographers.json")
 
-    #rts.get_IxB("onetoken").to_dot("ixb", None)
     #rts.get_T().to_dot("transducer", None)
+    #rts.get_IxB("external").to_dot("external", None)
 
 
-    print("start")
     time_list = []
+    t = rts.get_T()
+    ixb = rts.get_IxB("modifiedmodified")
     for i in range(0, 1):
         start_time = time.time()
-        o = Algorithms.ONESHOT(rts.get_IxB("notoken"), rts.get_T())
+        o = Algorithms.ONESHOT(ixb, t)
         o.one_shot_bfs()
         end_time = time.time()
 
@@ -104,6 +105,14 @@ if __name__ == '__main__':
         time_list.append(elapsed_time)
         #print("Elapsed time: ", elapsed_time * 1000, "ms")
     print("Average time: ", sum(time_list) / len(time_list), "s")
+
+    #print(t.get_final_states())
+    #print(ixb.get_final_states())
+    #t.to_dot("t", None)
+    #ixb.to_dot("one", None)
+    #for i in rts.get_T().get_alphabet_map().sigma_x_sigma_iterator():
+    #    print(f'{rts.get_T().get_alphabet_map().transition_to_str(i)} -> {bin(i)}')
+
 
 
 
