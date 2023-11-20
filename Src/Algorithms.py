@@ -45,6 +45,7 @@ class StepGameBuffer:
         if i is not None:
             self.cache_hit += len(self.c_ltb.get((tuple(c), symbol)))
         return i
+
     """
     def add_entry(self, c, symbols, d):
         c = tuple(c)
@@ -70,28 +71,42 @@ class StepGameBuffer:
 if __name__ == '__main__':
     step = StepGameBuffer()
 
-    step.add_entry([1,2], [('n', 't'), ('n', 'n')], [1, 2])
-    print(step.get_entry([1,2], ('n', 't')))
-    print(step.get_entry([1,2], ('n', 'n')))
-    print(step.get_entry([1,2], ('t', 'n')))
-    print(step.get_entry([1,2,3], ('t', 'n')))
+    step.add_entry([1, 2], [('n', 't'), ('n', 'n')], [1, 2])
+    print(step.get_entry([1, 2], ('n', 't')))
+    print(step.get_entry([1, 2], ('n', 'n')))
+    print(step.get_entry([1, 2], ('t', 'n')))
+    print(step.get_entry([1, 2, 3], ('t', 'n')))
 
 
 class ONESHOT:
+    class StepGameBuffer:
+        def __init__(self):
+            self.c_ltb = {}
+            self.cache_hit = 0
+
+        def add_entry(self, c, symbol, d_I_list):
+            if self.c_ltb.get((tuple(c), symbol)) is None:
+                self.c_ltb[(tuple(c), symbol)] = d_I_list
+
+        def get_entry(self, c, symbol):
+            hit = self.c_ltb.get((tuple(c), symbol))
+            if hit is not None:
+                self.cache_hit += self.c_ltb.get((tuple(c), symbol))
+            return hit
+
     def __init__(self, IxB, T):
         self.IxB = IxB
         self.T = T
         self.alphabet_map = T.get_alphabet_map()
         self.sst = NFATransducer(self.alphabet_map)
         self.step_buffer = StepGameBuffer()
+        self.i = 0
 
     def one_shot_bfs(self):
         (ib0, c0) = (self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])
         Q = [(ib0, c0)]
         W = [(ib0, c0)]
-        C = []
-        i = 0
-        ctr = 0
+        trans = 0
         while len(Q) != 0:
             (ib, c) = Q.pop(0)
             # iterate over all transitions of the state ib
@@ -100,63 +115,62 @@ class ONESHOT:
                 gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
                 # iterate over all reachable (ib, c) -> (ib_succ, d)
 
-                if (tuple(c), ib_trans) not in C:
-                    C.append((tuple(c), ib_trans))
-                ctr += 1
-
                 d_I_list = []
-                hits = self.step_buffer.get_entry(c, ib_trans)
-                d_I_itr = (self.step_game_gen(c, [], v, gs, [], [], ib_trans), hits)[hits is not None]
 
-                for (d, I) in d_I_itr:
+                cache_hit = self.step_buffer.get_entry(c, ib_trans)
+                d_I_itr = (self.step_game_gen(c, [], v, gs, [], [], ib_trans), cache_hit)[cache_hit is not None]
+
+                for d, I in d_I_itr:
                     d_I_list.append((d, I))
+                    trans += 1
                     if (ib_succ, d) not in W:
                         W.append((ib_succ, d))
                         Q.append((ib_succ, d))
-                        i += 1
-                        print(i)
+                        self.i += 1
+
+                        print(f'{self.i}: {c}, {ib_trans}, {d}')
 
                         if self.IxB.is_final_state(ib_succ) and len(
                                 list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-                            print(f'{ib_succ}, {d}')
+                            print(f'{d}')
                             print("Result: x")
                             return 0
                 self.step_buffer.add_entry(c, ib_trans, d_I_list)
+        print("transitions: " + str(trans))
+        print("cache hits: " + str(self.step_buffer.cache_hit))
         print("Result: ✓")
-        print("Total unique pairs: " + str(len(C)))
-        print("Total c-trans pairs checked: " + str(ctr))
-        print("Total cache hits: " + str(self.step_buffer.cache_hit))
         return 0
 
     def step_game_gen(self, c1, c2, v, gs, visited, marked, ib_trans):
-        if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):
+        if c2 in visited: # Return if c2 has been visited
+            return
+        if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
             visited.append(c2)
-            yield c2, gs.get_I()
+            yield c2, gs.I
 
-        d_I_hits = self.step_buffer.get_entry(c1[:gs.l], ib_trans)
-        if d_I_hits is not None and c1[:gs.l] not in marked:
-            for (d, I) in d_I_hits:
-                if d not in visited:
-                    marked.append(c1[:gs.l])
-                    yield from self.step_game_gen(c1, d, v, Triple(gs.l, I, len(d)), visited, marked, ib_trans)
+
+        cache_hit = self.step_buffer.get_entry(c1[:gs.l + 1], ib_trans)
+        if cache_hit is not None and c1 not in marked:
+            marked.append(c1)
+            for (d, I) in cache_hit:
+                yield from self.step_game_gen(c1[:gs.l + 1], d, v, Triple(gs.l, I, len(d)), visited, marked, ib_trans)
         else:
-            for (q, trans_gen) in (map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1])):
+            for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
                 for (qp_t, p) in trans_gen:
-                    if c2 in visited:
-                        break
                     x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
                     if symbol_not_in_seperator(gs.I, y):
-                        c2_ = []
                         if p not in c2:
                             c2_ = c2 + [p]
                             if c2_ in visited:
-                                break
+                                continue
                         else:
                             c2_ = c2
                         gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
                                      refine_seperator(gs.I, x),
                                      gs.r + (1, 0)[p in c2])
                         if not gs.equal(gs_):
+                            #if self.i == 479:
+                            #    print(f'{c1}, {c2} -> {c2_}, {qp_t}, {gs}')
                             yield from self.step_game_gen(c1, c2_, v, gs_, visited, marked, ib_trans)
 
 
