@@ -1,4 +1,8 @@
+"""Different helper functions for the one_shot implementations"""
+
+
 class Triple:
+    """Stores the game state <l, I, r> as described in the Paper"""
     def __init__(self, l, I, r):
         self.l = l
         self.I = I
@@ -50,7 +54,7 @@ def refine_seperator(S, i):
     return S & ~(1 << i)
 
 
-def bit_map_seperator_to_inv_list(S, n):  # TODO: can be optimized?
+def bit_map_seperator_to_inv_list(S, n):
     """Returns the indices of all symbols that are not contained in the bit-map of the seperator S"""
     inv_list = []
     for i in range(0, n):

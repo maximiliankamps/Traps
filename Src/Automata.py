@@ -165,8 +165,13 @@ class NFATransducer(AbstractTransducer):
         return T_new
 
 
-# Matches (.*), |
 def parse_transition_regex(regex, alph_map, id):
+    """
+    :param regex: The regex for transition from .json file
+    :param alph_map: Maps string transitions symbols to bit encoding
+    :param id: If set to true returns id transitions for I and B
+    :return: A list of transition symbols
+    """
     m = (map(lambda s: s[0] + "," + s[1],  # create a list of sigma,sigma
              (product(alph_map.sigma, alph_map.sigma), zip(alph_map.sigma, alph_map.sigma))[id]))
     r = re.compile(((regex, f'{regex},{regex}')[id]))
@@ -176,6 +181,11 @@ def parse_transition_regex(regex, alph_map, id):
 
 
 def parse_transition_regex_dfa(trans_dict, alph_map):
+    """
+    :param trans_dict: The regex for transition from .json file
+    :param alph_map: Maps string transitions symbols to bit encoding
+    :return: A list of transitions (q, x, p)
+    """
     transitions = []
     for t in trans_dict:
         r = re.compile(t["letter"])
@@ -189,9 +199,9 @@ def parse_transition_regex_dfa(trans_dict, alph_map):
 class RTS:
     def __init__(self, filename):
         self.IxB_dict = None
+        self.B_dict = None
         self.I = None
         self.T = None
-        self.B_dict = None
         self.alphabet_map = None
         self.rts_from_json(filename)
 
@@ -217,11 +227,11 @@ class RTS:
         transducer_dict = rts_dict["transducer"]
         properties_dict = rts_dict["properties"]
 
-        #self.I = (self.built_id_transducer(initial_dict, alphabet_map))
         self.T = self.build_transducer(transducer_dict, alphabet_map, False)
+        self.I = self.build_transducer(initial_dict, alphabet_map, True)
 
-        #self.B_dict = {name: self.build_transducer(properties_dict[name], alphabet_map, True) for name in
-        #               properties_dict}
+        self.B_dict = {name: self.build_transducer(properties_dict[name], alphabet_map, True) for name in
+                       properties_dict}
 
         self.IxB_dict = {name: self.build_cross_transducer(initial_dict, properties_dict[name]) for name in
                          properties_dict}
@@ -259,7 +269,8 @@ class RTS:
                         q1_q2_hash = hash_state([q1_, q2_], 0)
                         p1p2hash = hash_state([p1, p2], 0)
                         symbol = self.alphabet_map.combine_x_and_y(x, y)
-                        if result.get_successor(q1_q2_hash, symbol) is None or p1p2hash not in result.get_successor(q1_q2_hash, symbol):
+                        if result.get_successor(q1_q2_hash, symbol) is None or p1p2hash not in result.get_successor(
+                                q1_q2_hash, symbol):
                             result.add_transition(q1_q2_hash, symbol, p1p2hash)
                         if (p1, p2) not in W:
                             Q.append((p1, p2))
