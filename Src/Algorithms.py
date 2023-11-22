@@ -13,6 +13,13 @@ import bitarray
 class OneshotSmart:
     """OneShot implementation similar to the one in dodo"""
 
+    def __init__(self, IxB, T):
+        self.IxB = IxB
+        self.T = T
+        self.alphabet_map = T.get_alphabet_map()
+        self.step_cache = self.StepGameCache()
+        self.i = 0  # keeps count of the number of explored states
+
     class StepGameCache:
         def __init__(self):
             self.cache = {}
@@ -30,13 +37,6 @@ class OneshotSmart:
         def print(self):
             for key in self.cache:
                 print(f'{key} -> {self.cache[key]}')
-
-    def __init__(self, IxB, T):
-        self.IxB = IxB
-        self.T = T
-        self.alphabet_map = T.get_alphabet_map()
-        self.step_cache = self.StepGameCache()
-        self.i = 0  # keeps count of the number of explored states
 
     def one_shot_bfs(self):
         """Explores the IxB ∩ (reduced seperator transducer) in a breath first search"""

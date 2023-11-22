@@ -54,7 +54,7 @@ class NFATransducer(AbstractTransducer):
         self.initial_states = []
         self.final_states = []
         self.alphabet_map = alphabet_map
-        self.transitions = Storage.SimpleStorageNFA(0, alphabet_map.get_num_symbols_in_sigma_x_sigma())
+        self.transitions = Storage.SimpleStorageNFA()
         self.statistics = Storage.Statistics()
 
     def set_state_count(self, state_count):
@@ -88,15 +88,10 @@ class NFATransducer(AbstractTransducer):
         return self.alphabet_map
 
     def add_transition(self, origin, symbol_index, target):
-        self.statistics.log_transition()
         self.transitions.add_transition(origin, symbol_index, target)
 
     def get_transitions(self, origin):
-        for symbol in self.alphabet_map.sigma_x_sigma_iterator():
-            target = self.get_successor(origin, symbol)
-            if target != None:
-                for p in target:
-                    yield symbol, p
+        yield from self.transitions.transition_iterator(origin)
 
     def get_successor(self, origin, symbol_index):
         return self.transitions.get_successor(origin, symbol_index)

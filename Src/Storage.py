@@ -34,30 +34,41 @@ class AbstractStorage(ABC):
 class SimpleStorageNFA(AbstractStorage):
     """Maps (state, symbol) to [state]. Used for Seperator Transducer"""
 
-    def __init__(self, state_count, symbol_count):  # symbol_count refers to the count sigma x sigma
+    def __init__(self):
         self.state_count = 0
         self.dictionary = {}
 
     def add_transition(self, origin, symbol, target):
         self.state_count += 1
-        if self.dictionary.get((origin, symbol)) is None:
-            self.dictionary[(origin, symbol)] = [target]
+        if self.dictionary.get(origin) is None:
+            self.dictionary[origin] = {symbol: [target]}
+        elif self.dictionary.get(origin).get(symbol) is None:
+            (self.dictionary[origin])[symbol] = [target]
         else:
-            self.dictionary[(origin, symbol)].append(target)
+            (self.dictionary[origin])[symbol].append(target)
 
     def get_successor(self, origin, symbol):
-        if self.dictionary.get((origin, symbol)) is not None:
-            return self.dictionary[(origin, symbol)]
+        look_up = self.dictionary.get(origin)
+        if look_up is not None:
+            return look_up.get(symbol)
         return None
 
     def state_iterator(self):
         return range(0, self.state_count)
 
+    def transition_iterator(self, origin):
+        if self.dictionary.get(origin) is None:
+            return
+        for s in self.dictionary[origin]:
+            for target in self.dictionary[origin][s]:
+                yield s, target
+
     def __str__(self):
         result = ""
-        for (state, symbol) in self.dictionary:
-            result += "state: " + str(state) + " symbol: " + str(symbol) + " target: " + str(
-                self.dictionary[(state, symbol)]) + "\n"
+        for state in self.dictionary:
+            for symbol in self.dictionary[state]:
+                result += "state: " + str(state) + " symbol: " + str(symbol) + " target: " + str(
+                    (self.dictionary[state])[symbol]) + "\n"
         return result
 
 
@@ -123,7 +134,8 @@ class AlphabetMap:
         return range(0, self.get_sigma_size())
 
     def sigma_x_sigma_iterator(self):
-        return map(lambda x_y: self.combine_x_and_y(x_y[0], x_y[1]), product(self.sigma_iterator(), self.sigma_iterator()))
+        return map(lambda x_y: self.combine_x_and_y(x_y[0], x_y[1]),
+                   product(self.sigma_iterator(), self.sigma_iterator()))
 
     def get_sigma_size(self):
         """Returns the size of the alphabet sigma """
