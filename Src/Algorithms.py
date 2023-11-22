@@ -4,7 +4,7 @@ from Automata import NFATransducer, hash_state
 from enum import Enum
 import Storage
 import numpy as np
-from Util import Triple, strS
+from Util import *
 from itertools import chain, product, permutations
 from Optimizations import StepGameMemo, StepGameMemo2
 
@@ -37,13 +37,17 @@ class StepGameCache:
         self.cache_hits = 0
 
     def add_entry(self, c, game_state, v, d_current, d_winning):
-        self.cache[(c, game_state, v, d_current)] = d_winning
+        self.cache[(tuple(c), game_state.l, game_state.I, v, tuple(d_current))] = d_winning
 
     def get_entry(self, c, game_state, v, d_current):
-        look_up = self.cache.get((c, game_state, v, d_current))
+        look_up = self.cache.get((tuple(c), game_state.l, game_state.I, v, tuple(d_current)))
         if look_up is not None:
             self.cache_hits += 1
         return look_up
+
+    def print(self):
+        for key in self.cache:
+            print(f'{key} -> {self.cache[key]}')
 
 
 class StepGameBuffer:
@@ -81,17 +85,6 @@ class StepGameBuffer:
             print("hit")
         return transition_ltb.get(symbol)
     """
-
-
-if __name__ == '__main__':
-    step = StepGameBuffer()
-
-    step.add_entry([1, 2], [('n', 't'), ('n', 'n')], [1, 2])
-    print(step.get_entry([1, 2], ('n', 't')))
-    print(step.get_entry([1, 2], ('n', 'n')))
-    print(step.get_entry([1, 2], ('t', 'n')))
-    print(step.get_entry([1, 2, 3], ('t', 'n')))
-
 
 class ONESHOT:
     class StepGameBuffer:
@@ -131,45 +124,31 @@ class ONESHOT:
                 gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
                 # iterate over all reachable (ib, c) -> (ib_succ, d)
 
-                d_I_list = []
+                for d in self.step_game_gen2(c, [], v, gs, []):
+                    trans += 1
+                    if (ib_succ, d) not in W:
+                        W.append((ib_succ, d))
+                        Q.append((ib_succ, d))
+                        self.i += 1
+                        print(self.i)
+                        #print(f'{self.i}: {c}, {ib_trans}, {d}')
 
-                cache_hit = self.step_buffer.get_entry(c, ib_trans)
-
-                c2_candidates = [([], refine_seperator(self.alphabet_map.get_bit_map_sigma(), u))]
-                i = 0
-                for i in range(len(c), 0):
-                    c_hit = self.step_buffer.get_entry(c[:i], ib_trans)
-                    if c_hit is not None:
-                        c2_candidates = c_hit
-                        break
-
-                # d_I_itr = (self.step_game_gen(c, [], v, gs, [], [], ib_trans), cache_hit)[cache_hit is not None]
-
-                for (c2, I_) in c2_candidates:
-                    for d, I in self.step_game_gen(c, c2, v, Triple(i, I_, len(c2)), [], [], ib_trans):
-                        d_I_list.append((d, I))
-                        trans += 1
-                        if (ib_succ, d) not in W:
-                            W.append((ib_succ, d))
-                            Q.append((ib_succ, d))
-                            self.i += 1
-
-                            print(f'{self.i}: {c}, {ib_trans}, {d}')
-
-                            if self.IxB.is_final_state(ib_succ) and len(
-                                    list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-                                print(f'{d}')
-                                print("Result: x")
-                                return 0
-                    self.step_buffer.add_entry(c, ib_trans, d_I_list)
-        print("transitions: " + str(trans))
-        print("cache hits: " + str(self.step_buffer.cache_hit))
+                        if self.IxB.is_final_state(ib_succ) and len(
+                                list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
+                            print(f'{d}')
+                            print("Result: x")
+                            return 0
+        #self.step_cache.print()
+        print("#states: " + str(self.i))
+        print("cache hits: " + str(self.step_cache.cache_hits))
+        print("#transitions: " + str(trans))
         print("Result: ✓")
         return 0
 
     def step_game_gen(self, c1, c2, v, gs, visited, marked, ib_trans):
         if c2 in visited:  # Return if c2 has been visited
             return
+
         if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
             visited.append(c2)
             yield c2, gs.I
@@ -198,7 +177,14 @@ class ONESHOT:
 
     def step_game_gen2(self, c1, c2, v, gs, visited):
         if c2 in visited:  # Return if c2 has been visited
+            print("fuck") # TODO: Optimize exploratory seq
             return
+        cache_hit = self.step_cache.get_entry(c1, gs, v, c2)
+        if cache_hit is not None:
+            for hit in cache_hit:
+                yield hit
+            return
+
         if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
             visited.append(c2)
             yield c2
@@ -310,31 +296,6 @@ def step_game(c1, u, S, c2, T, logging, step_memo):
     if game_state.l < n and game_state.r < m:
         step_memo.add_node(c1, c2, u, S, -1, True)
     return False
-
-
-def slice_column(col, i):
-    """Slices the columns c1 and c2 by i"""
-    return col[:i]
-
-
-def refine_seperator(S, i):
-    """Remove the 1-bit at position i from S"""
-    return S & ~(1 << i)
-
-
-def symbol_not_in_seperator(S, i):
-    """Returns true if the symbol with index i is not in S"""
-    return (S & (1 << i)) == 0
-
-
-def bit_map_seperator_to_inv_list(S, n):  # TODO: can be optimized?
-    """Returns the indices of all symbols that are not contained in the bit-map of the seperator S"""
-    inv_list = []
-    for i in range(0, n):
-        if S & (1 << i) == 0:
-            inv_list.append(i)
-    return inv_list
-
 
 def log_step(n, m, S, c1, c2, cur_c1, cur_c2, q, x_y, p, game_state, alphabet_map):
     print("n: " + str(n) + "\nm: " + str(m) + "\nS: " + strS(S) + "\nc1 " + str(c1) + " | cur_c1: " + str(cur_c1))

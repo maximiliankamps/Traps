@@ -86,7 +86,7 @@ def build_simple_token_passing_transducer():
 
 
 if __name__ == '__main__':
-    rts = Automata.RTS("Burns.json")
+    rts = Automata.RTS("MOESI.json")
 
     #rts.get_T().to_dot("transducer", None)
     #rts.get_IxB("external").to_dot("external", None)
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     time_list = []
     t = rts.get_T()
-    ixb = rts.get_IxB("nomutex")
+    ixb = rts.get_IxB("modifiedmodified")
     for i in range(0, 1):
         start_time = time.time()
         o = Algorithms.ONESHOT(ixb, t)

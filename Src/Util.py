@@ -32,23 +32,31 @@ class Triple:
         return self.l == triple.get_l() and self.I == triple.I and self.r == triple.r
 
     def __str__(self):
-        return "<" + str(self.l) + "," + strS(self.I) + "," + str(self.r) + ">"
-
-
-def strS(S):
-    if S == 0:
-        return "[]"
-    if S == 1:
-        return "[n]"
-    if S == 2:
-        return "[t]"
-    else:
-        return "[n, t]"
+        return "<" + str(self.l) + "," + self.I + "," + str(self.r) + ">"
 
 
 def symbol_not_in_seperator(S, i):
     """Returns true if the symbol with index i is in S"""
     return (S & (1 << i)) == 0
+
+
+def slice_column(col, i):
+    """Slices the columns c1 and c2 by i"""
+    return col[:i]
+
+
+def refine_seperator(S, i):
+    """Remove the 1-bit at position i from S"""
+    return S & ~(1 << i)
+
+
+def bit_map_seperator_to_inv_list(S, n):  # TODO: can be optimized?
+    """Returns the indices of all symbols that are not contained in the bit-map of the seperator S"""
+    inv_list = []
+    for i in range(0, n):
+        if S & (1 << i) == 0:
+            inv_list.append(i)
+    return inv_list
 
 
 def optional_list(l):
