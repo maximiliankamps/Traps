@@ -4,7 +4,7 @@ import Algorithms
 import Automata
 
 if __name__ == '__main__':
-    rts = Automata.RTS("MESI.json")
+    rts = Automata.RTS("token-passing.json")
     """
     # Example of OneShotSimple
     x = Algorithms.OneShotSimple()
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # Example of OneShotSmart
     time_list = []
     t = rts.get_T()
-    ixb = rts.get_IxB("modifiedmodified")
+    ixb = rts.get_IxB("onetoken")
     for i in range(0, 1):
         start_time = time.time()
         o = Algorithms.OneshotSmart(ixb, t)

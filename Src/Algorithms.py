@@ -53,13 +53,13 @@ class OneshotSmart:
                 gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
 
                 # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
-                for d in self.step_game_gen_buffered(c, [], v, gs, []):
+                for d in self.step_game_gen_buffered_dfs(c, [], v, gs, []):
                     trans += 1
                     if (ib_succ, d) not in visited_states:
                         visited_states.append((ib_succ, d))
                         work_set.append((ib_succ, d))
                         self.i += 1
-                        print(f'{self.i}')
+                        #print(f'{self.i}')
                         # print(f'{self.i}: {c}, {ib_trans}, {d}')
 
                         if self.IxB.is_final_state(ib_succ) and len(
@@ -73,7 +73,7 @@ class OneshotSmart:
         print("Result: ✓")
         return True
 
-    def step_game_gen_simple(self, c1, c2, v, gs, visited):
+    def step_game_gen_simple_dfs(self, c1, c2, v, gs, visited):
         """
         :param c1: List of the from-column
         :param c2: List of the to-column
@@ -82,6 +82,7 @@ class OneshotSmart:
         :param visited: A list keeping track of all winning states d
         :return: Lazily return states d
         """
+        next_marked = []  # store if the next step gs_, c_ has been explored already
         if c2 in visited:  # Return if c2 has been visited
             return
 
@@ -102,12 +103,13 @@ class OneshotSmart:
                     gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
                                  refine_seperator(gs.I, x),
                                  gs.r + (1, 0)[p in c2])
-                    if not gs.equal(gs_):
-                        yield from self.step_game_gen_simple(c1, c2_, v, gs_, visited)
+                    if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
+                        next_marked.append((gs_.l, gs_.I, c2_))
+                        yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
 
-    def step_game_gen_buffered(self, c1, c2, v, gs, visited):
+    def step_game_gen_buffered_dfs(self, c1, c2, v, gs, visited):
         """
-        Uses the same buffer as the one_shot implementation of dodo
+        Uses the same buffer as the one_shot implementation of dodo, returns states d in a depth first search
         :param c1: List of the from-column
         :param c2: List of the to-column
         :param v: The symbol to be removed from the seperator
@@ -115,6 +117,7 @@ class OneshotSmart:
         :param visited: A list keeping track of all winning states d
         :return: Lazily return states d
         """
+        #print(f'{c1} + {c2} + {v} + {str(gs)} + {visited}')
         next_marked = []  # store if the next step gs_, c_ has been explored already
         if c2 in visited:  # Return if c2 has been visited
             return
@@ -143,7 +146,50 @@ class OneshotSmart:
                                  gs.r + (1, 0)[p in c2])
                     if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
                         next_marked.append((gs_.l, gs_.I, c2_))
-                        yield from self.step_game_gen_buffered(c1, c2_, v, gs_, visited)
+                        yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
+        self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
+
+    # TODO: Implement as Workset-Algorithm
+    def step_game_gen_buffered_bfs(self, c1, c2, v, gs, visited):
+        """
+        Uses the same buffer as the one_shot implementation of dodo, returns states d in a breath first search
+        :param c1: List of the from-column
+        :param c2: List of the to-column
+        :param v: The symbol to be removed from the seperator
+        :param gs: The game state <l, I, r>
+        :param visited: A list keeping track of all winning states d
+        :return: Lazily return states d
+        """
+        print(f'{c1} + {c2} + {v} + {str(gs)} + {visited}')
+        next_marked = []  # store if the next step gs_, c_ has been explored already
+        if c2 in visited:  # Return if c2 has been visited
+            return
+        cache_hit = self.step_cache.get_entry(c1, gs, v, c2)  # Check if this partially played game is in cache
+        if cache_hit is not None:
+            for hit in cache_hit:
+                yield hit
+            return
+
+        if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
+            visited.append(c2)
+            yield c2
+
+        for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
+            for (qp_t, p) in trans_gen:
+                x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
+                if symbol_not_in_seperator(gs.I, y):
+                    if p not in c2:
+                        c2_ = c2 + [p]
+                        if c2_ in visited:
+                            continue
+                    else:
+                        c2_ = c2
+                    gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
+                                 refine_seperator(gs.I, x),
+                                 gs.r + (1, 0)[p in c2])
+                    if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
+                        next_marked.append((gs_.l, gs_.I, c2_))
+                        yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
         self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
 
 

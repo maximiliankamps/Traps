@@ -3,20 +3,26 @@
   "deadlockThreshold": 2,
   "alphabet": ["n", "t"],
   "initial": {
-     "states": ["q0"],
-      "initialState": "q0",
-      "acceptingStates": [],
-      "transitions": [
-        {
-          "origin": "q0",
-          "target": "q0",
-          "letter": "n"
-        }, {
-          "origin": "q0",
-          "target": "q0",
-          "letter": "t"
-        }
-      ]
+    "states": [
+      "q0",
+      "q1"
+    ],
+    "initialState": "q0",
+    "acceptingStates": [
+      "q1"
+    ],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "t"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "n"
+      }
+    ]
   },
   "transducer": {
     "states": ["q0", "q1", "q2"],
