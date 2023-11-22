@@ -36,7 +36,7 @@ class Triple:
         return self.l == triple.get_l() and self.I == triple.I and self.r == triple.r
 
     def __str__(self):
-        return "<" + str(self.l) + "," + self.I + "," + str(self.r) + ">"
+        return "<" + str(self.l) + "," + bin(self.I) + "," + str(self.r) + ">"
 
 
 def symbol_not_in_seperator(S, i):

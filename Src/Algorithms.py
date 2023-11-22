@@ -59,7 +59,7 @@ class OneshotSmart:
                         visited_states.append((ib_succ, d))
                         work_set.append((ib_succ, d))
                         self.i += 1
-                        print(self.i)
+                        print(f'{self.i}')
                         # print(f'{self.i}: {c}, {ib_trans}, {d}')
 
                         if self.IxB.is_final_state(ib_succ) and len(
@@ -115,6 +115,7 @@ class OneshotSmart:
         :param visited: A list keeping track of all winning states d
         :return: Lazily return states d
         """
+        next_marked = []  # store if the next step gs_, c_ has been explored already
         if c2 in visited:  # Return if c2 has been visited
             return
         cache_hit = self.step_cache.get_entry(c1, gs, v, c2)  # Check if this partially played game is in cache
@@ -140,7 +141,8 @@ class OneshotSmart:
                     gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
                                  refine_seperator(gs.I, x),
                                  gs.r + (1, 0)[p in c2])
-                    if not gs.equal(gs_):
+                    if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
+                        next_marked.append((gs_.l, gs_.I, c2_))
                         yield from self.step_game_gen_buffered(c1, c2_, v, gs_, visited)
         self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
 

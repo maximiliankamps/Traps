@@ -102,7 +102,7 @@ class NFATransducer(AbstractTransducer):
     def to_dot(self, filename, column_hashing):
         g = gviz.Digraph('G', filename="Pictures/" + f'{filename}')
 
-        for source in range(0, 1000000):
+        for source in range(0, 100):
             for x in self.alphabet_map.sigma:
                 for y in self.alphabet_map.sigma:
                     target = self.get_successor(source, self.alphabet_map.combine_symbols(x, y))
