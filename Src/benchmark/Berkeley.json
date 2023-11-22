@@ -1,0 +1,254 @@
+{
+  "description": "The cache coherence protocol Berkeley.",
+  "topology": "crowd",
+  "k": 1,
+  "deadlockThreshold": 1,
+  "alphabet": ["u", "e", "n", "i"],
+  "initial": {
+    "states": ["q0"],
+    "initialState": "q0",
+    "acceptingStates": ["q0"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "i"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q4", "q6", "q8"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(u,u|e,e|i,i|n,n)"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(u,u|e,e|i,i|n,n)"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "(e,e|n,n|u,u|e,i|n,i|u,i)"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "(e,e|n,n|u,u|e,i|n,i|u,i)"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(u,u|e,e|i,i|n,n)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(i,i|n,n|e,n|u,u)"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "(i,i|n,n|e,n|u,u)"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "i,u"
+      },
+      {
+        "origin": "q3",
+        "target": "q4",
+        "letter": "i,u"
+      },
+      {
+        "origin": "q4",
+        "target": "q4",
+        "letter": "(i,i|n,n|e,n|u,u)"
+      },
+      {
+        "origin": "q0",
+        "target": "q5",
+        "letter": "(i,i|u,i|e,e|s,i)"
+      },
+      {
+        "origin": "q5",
+        "target": "q5",
+        "letter": "(i,i|u,i|e,e|s,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q6",
+        "letter": "(u,e|n,e)"
+      },
+      {
+        "origin": "q5",
+        "target": "q6",
+        "letter": "(u,e|n,e)"
+      },
+      {
+        "origin": "q6",
+        "target": "q6",
+        "letter": "(i,i|u,i|e,e|s,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q7",
+        "letter": "(i,i|n,i|e,i|u,i)"
+      },
+      {
+        "origin": "q7",
+        "target": "q7",
+        "letter": "(i,i|n,i|e,i|u,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q8",
+        "letter": "i,e"
+      },
+      {
+        "origin": "q7",
+        "target": "q8",
+        "letter": "i,e"
+      },
+      {
+        "origin": "q8",
+        "target": "q8",
+        "letter": "(i,i|n,i|e,i|u,i)"
+      }
+    ]
+  },
+  "properties": {
+    "exclusiveexclusive": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "e"
+        }
+      ]
+    },
+    "exclusiveunowned": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "u"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "e"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "u"
+        }
+      ]
+    },
+    "exclusivenonexclusive": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "n"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "e"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "n"
+        }
+      ]
+    }
+  }
+}

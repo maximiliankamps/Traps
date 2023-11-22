@@ -1,0 +1,313 @@
+{
+  "description": "The mutual exclusion protocol by Szymanski.",
+  "deadlockThreshold": 1,
+  "alphabet": [
+    "00",
+    "10",
+    "20",
+    "30",
+    "40",
+    "50",
+    "60",
+    "70",
+    "80",
+    "90",
+    "01",
+    "11",
+    "21",
+    "31",
+    "41",
+    "51",
+    "61",
+    "71",
+    "81",
+    "91",
+    "02",
+    "12",
+    "22",
+    "32",
+    "42",
+    "52",
+    "62",
+    "72",
+    "82",
+    "92",
+    "03",
+    "13",
+    "23",
+    "33",
+    "43",
+    "53",
+    "63",
+    "73",
+    "83",
+    "93",
+    "04",
+    "14",
+    "24",
+    "34",
+    "44",
+    "54",
+    "64",
+    "74",
+    "84",
+    "94"
+  ],
+  "initial": {
+    "states": ["q0"],
+    "initialState": "q0",
+    "acceptingStates": ["q0"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "00"
+      }
+    ]
+  },
+  "transducer": {
+    "states": [
+      "q0",
+      "q1",
+      "q2",
+      "q3",
+      "q4",
+      "q5",
+      "q6",
+      "q7",
+      "q8",
+      "q9",
+      "q10",
+      "q11",
+      "q12"
+    ],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q4", "q8", "q12"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "0.,11|2.,33|6.,74|9.,00"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "0.,11|2.,33|6.,74|9.,00"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(?<state>.)(?<flag>[012]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "(?<state>.)(?<flag>[012]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "1(.),2\\1"
+      },
+      {
+        "origin": "q3",
+        "target": "q4",
+        "letter": "1(.),2\\1"
+      },
+      {
+        "origin": "q4",
+        "target": "q4",
+        "letter": "(?<state>.)(?<flag>[012]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q1",
+        "target": "q5",
+        "letter": "3(.),4\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q5",
+        "letter": "3(.),4\\1"
+      },
+      {
+        "origin": "q5",
+        "target": "q5",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q5",
+        "target": "q2",
+        "letter": "(?<state>.)1,\\k<state>1"
+      },
+      {
+        "origin": "q1",
+        "target": "q6",
+        "letter": "(?<state>.)1,\\k<state>1"
+      },
+      {
+        "origin": "q0",
+        "target": "q6",
+        "letter": "(?<state>.)1,\\k<state>1"
+      },
+      {
+        "origin": "q6",
+        "target": "q6",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q6",
+        "target": "q2",
+        "letter": "3(.),4\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q7",
+        "letter": "(?<state>.)(?<flag>[0234]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q7",
+        "target": "q7",
+        "letter": "(?<state>.)(?<flag>[0234]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q0",
+        "target": "q8",
+        "letter": "3(.),6\\1"
+      },
+      {
+        "origin": "q7",
+        "target": "q8",
+        "letter": "3(.),6\\1"
+      },
+      {
+        "origin": "q8",
+        "target": "q8",
+        "letter": "(?<state>.)(?<flag>[0234]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q1",
+        "target": "q9",
+        "letter": "5(.),6\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q9",
+        "letter": "5(.),6\\1"
+      },
+      {
+        "origin": "q9",
+        "target": "q9",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q9",
+        "target": "q2",
+        "letter": "(?<state>.)4,\\k<state>4"
+      },
+      {
+        "origin": "q1",
+        "target": "q10",
+        "letter": "(?<state>.)4,\\k<state>4"
+      },
+      {
+        "origin": "q0",
+        "target": "q10",
+        "letter": "(?<state>.)4,\\k<state>4"
+      },
+      {
+        "origin": "q10",
+        "target": "q10",
+        "letter": "(.*),\\1"
+      },
+      {
+        "origin": "q10",
+        "target": "q2",
+        "letter": "5(.),6\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q11",
+        "letter": "(?<state>.)(?<flag>[01]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q11",
+        "target": "q11",
+        "letter": "(?<state>.)(?<flag>[01]),\\k<state>\\k<flag>"
+      },
+      {
+        "origin": "q0",
+        "target": "q12",
+        "letter": "7(.),8\\1"
+      },
+      {
+        "origin": "q11",
+        "target": "q2",
+        "letter": "7(.),8\\1"
+      },
+      {
+        "origin": "q0",
+        "target": "q12",
+        "letter": "8(.),9\\1"
+      },
+      {
+        "origin": "q1",
+        "target": "q12",
+        "letter": "8(.),9\\1"
+      },
+      {
+        "origin": "q12",
+        "target": "q12",
+        "letter": "(?<state>.)(?<flag>[014]),\\k<state>\\k<flag>"
+      }
+    ]
+  },
+  "properties": {
+    "nomutex": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": ".*"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": ".*"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": ".*"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "8."
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "8."
+        }
+      ]
+    }
+  }
+}

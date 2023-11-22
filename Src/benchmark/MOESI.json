@@ -1,0 +1,402 @@
+{
+  "description": "The cache coherence protocol MOESI.",
+  "topology": "crowd",
+  "k": 1,
+  "deadlockThreshold": 1,
+  "alphabet": ["m", "o", "e", "s", "i"],
+  "initial": {
+    "states": ["q0"],
+    "initialState": "q0",
+    "acceptingStates": ["q0"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "i"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3", "q4", "q5", "q6"],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q4", "q6"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(e,e|s,s|i,i|m,m|o,o)"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(e,e|s,s|i,i|m,m|o,o)"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "(m,m|e,e|s,s|o,o|e,m|o,i|e,i|m,i|s,i)"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "(m,m|e,e|s,s|o,o|e,m|o,i|e,i|m,i|s,i)"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(e,e|s,s|i,i|m,m|o,o)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(e,s|s,s|i,i|m,o|o,o)"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "(e,s|s,s|i,i|m,o|o,o)"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "i,s"
+      },
+      {
+        "origin": "q3",
+        "target": "q4",
+        "letter": "i,s"
+      },
+      {
+        "origin": "q4",
+        "target": "q4",
+        "letter": "(e,s|s,s|i,i|m,o|o,o)"
+      },
+      {
+        "origin": "q0",
+        "target": "q5",
+        "letter": "(e,i|s,i|i,i|m,i|o,i)"
+      },
+      {
+        "origin": "q5",
+        "target": "q5",
+        "letter": "(e,i|s,i|i,i|m,i|o,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q6",
+        "letter": "(s,e|i,e)"
+      },
+      {
+        "origin": "q5",
+        "target": "q6",
+        "letter": "(s,e|i,e)"
+      },
+      {
+        "origin": "q6",
+        "target": "q6",
+        "letter": "(e,i|s,i|i,i|m,i|o,i)"
+      }
+    ]
+  },
+  "properties": {
+    "modifiedmodified": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "m"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "m"
+        }
+      ]
+    },
+    "exclusiveexclusive": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "e"
+        }
+      ]
+    },
+    "sharedexclusive": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "s"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "e"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "s"
+        }
+      ]
+    },
+    "ownedexclusive": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "o"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "e"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "o"
+        }
+      ]
+    },
+    "exclusivemodified": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "m"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "e"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "e"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "m"
+        }
+      ]
+    },
+    "ownedmodified": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "o"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "m"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "m"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "o"
+        }
+      ]
+    },
+    "sharedmodified": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "s"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "m"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "m"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "s"
+        }
+      ]
+    }
+  }
+}

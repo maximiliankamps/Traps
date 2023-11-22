@@ -1,0 +1,98 @@
+{
+  "description": "A protocol for mutual exclusion.",
+  "deadlockThreshold": 1,
+  "alphabet": ["a", "w", "c"],
+  "initial": {
+    "states": ["q0", "q1"],
+    "initialState": "q0",
+    "acceptingStates": ["q1"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "c"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "a"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3"],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q3"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "a,a"
+      },
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "c,c"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "w,w"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "a,w"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "a,a"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "c,a|w,c"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "a,a|w,w|c,c"
+      }
+    ]
+  },
+  "properties": {
+    "nomutex": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "c"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "c"
+        }
+      ]
+    }
+  }
+}

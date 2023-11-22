@@ -1,0 +1,182 @@
+{
+  "description": "The cache coherence protocol MESI.",
+  "topology": "crowd",
+  "k": 1,
+  "deadlockThreshold": 1,
+  "alphabet": ["m", "e", "s", "i"],
+  "initial": {
+    "states": ["q0"],
+    "initialState": "q0",
+    "acceptingStates": ["q0"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "i"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3", "q4", "q5", "q6"],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q4", "q6"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(e,e|s,s|i,i|m,m)"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(e,e|s,s|i,i|m,m)"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "(m,m|s,s|e,e|e,m|e,i|m,i|s,i)"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "(m,m|s,s|e,e|e,m|e,i|m,i|s,i)"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(m,m|e,e|s,s|i,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(e,s|s,s|i,i|m,s)"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "(e,s|s,s|i,i|m,s)"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "i,s"
+      },
+      {
+        "origin": "q3",
+        "target": "q4",
+        "letter": "i,s"
+      },
+      {
+        "origin": "q4",
+        "target": "q4",
+        "letter": "(e,s|s,s|i,i|m,s)"
+      },
+      {
+        "origin": "q0",
+        "target": "q5",
+        "letter": "(e,i|s,i|i,i|m,i)"
+      },
+      {
+        "origin": "q5",
+        "target": "q5",
+        "letter": "(e,i|s,i|i,i|m,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q6",
+        "letter": "(s,e|m,e)"
+      },
+      {
+        "origin": "q5",
+        "target": "q6",
+        "letter": "(s,e|m,e)"
+      },
+      {
+        "origin": "q6",
+        "target": "q6",
+        "letter": "(e,i|s,i|i,i|m,i)"
+      }
+    ]
+  },
+  "properties": {
+    "modifiedmodified": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "m"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "m"
+        }
+      ]
+    },
+    "sharedmodified": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "m"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "s"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "s"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "m"
+        }
+      ]
+    }
+  }
+}

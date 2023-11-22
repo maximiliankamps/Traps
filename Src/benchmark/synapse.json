@@ -1,0 +1,157 @@
+{
+  "description": "The cache coherence protocol Synapse.",
+  "topology": "crowd",
+  "k": 1,
+  "deadlockThreshold": 1,
+  "alphabet": ["d", "v", "i"],
+  "initial": {
+    "states": ["q0"],
+    "initialState": "q0",
+    "acceptingStates": ["q0"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "i"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3", "q4"],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q4"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(d,d|v,v|i,i)"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(d,d|v,v|i,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "(d,d|v,v|d,i|v,i)"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "(d,d|v,v|d,i|v,i)"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(d,d|v,v|i,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(.*,i)"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "(.*,i)"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "(i,v|v,d|i,d)"
+      },
+      {
+        "origin": "q3",
+        "target": "q4",
+        "letter": "(i,v|v,d|i,d)"
+      },
+      {
+        "origin": "q4",
+        "target": "q4",
+        "letter": "(.*,i)"
+      }
+    ]
+  },
+  "properties": {
+    "dirtydirty": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "d"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "d"
+        }
+      ]
+    },
+    "dirtyvalid": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q3"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(.*)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "d"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "v"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "v"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "d"
+        }
+      ]
+    }
+  }
+}

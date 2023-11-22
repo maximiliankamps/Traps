@@ -1,0 +1,157 @@
+{
+  "description": "The mutual exclusion protocol by Burns.",
+  "deadlockThreshold": 1,
+  "alphabet": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "initial": {
+    "states": ["q0"],
+    "initialState": "q0",
+    "acceptingStates": ["q0"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "1"
+      }
+    ]
+  },
+  "transducer": {
+    "states": [
+      "q0",
+      "q1",
+      "q2",
+      "q3",
+      "q4",
+      "q5"
+    ],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q5"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(1,1|2,2|3,3|4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(1,1|2,2|3,3|4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "1,2|3,4|6,1"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "1,2|3,4|6,1"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(1,1|2,2|3,3|4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(1,1|2,2|3,3|4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "(4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q1",
+        "target": "q3",
+        "letter": "(4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q3",
+        "target": "q3",
+        "letter": "(1,1|2,2|3,3|4,4|5,5|6,6)"
+      },
+      {
+        "origin": "q3",
+        "target": "q2",
+        "letter": "2,1|4,1"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "(1,1|2,2|3,3)"
+      },
+      {
+        "origin": "q4",
+        "target": "q4",
+        "letter": "(1,1|2,2|3,3)"
+      },
+      {
+        "origin": "q0",
+        "target": "q2",
+        "letter": "2,3|4,5"
+      },
+      {
+        "origin": "q4",
+        "target": "q2",
+        "letter": "2,3|4,5"
+      },
+      {
+        "origin": "q0",
+        "target": "q5",
+        "letter": "5,6"
+      },
+      {
+        "origin": "q1",
+        "target": "q5",
+        "letter": "5,6"
+      },
+      {
+        "origin": "q5",
+        "target": "q5",
+        "letter": "(1,1|2,2|3,3)"
+      }
+    ]
+  },
+  "properties": {
+    "nomutex": {
+      "states": ["q0", "q1", "q2"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": ".*"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": ".*"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": ".*"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "6"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "6"
+        }
+      ]
+    }
+  }
+}

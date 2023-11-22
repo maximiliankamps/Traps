@@ -1,0 +1,212 @@
+{
+  "description": "The protocol of the dining cryptographers.",
+  "deadlockThreshold": 1,
+  "topology": "ring",
+  "alphabet": [
+    "fhu",
+    "phu",
+    "ftu",
+    "ptu",
+    "fha",
+    "pha",
+    "fta",
+    "pta",
+    "fhd",
+    "phd",
+    "ftd",
+    "ptd"
+  ],
+  "initial": {
+    "states": ["q0", "q1"],
+    "initialState": "q0",
+    "acceptingStates": ["q0", "q1"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q0",
+        "letter": "f.u"
+      },
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "p.u"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "f.u"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7"],
+    "initialState": "q0",
+    "acceptingStates": ["q2", "q5"],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "(fhu,fhu|phu,phu|ftu,ftu|ptu,ptu|fha,fha|pha,pha|fta,fta|pta,pta|fhd,fhd|phd,phd|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q1",
+        "target": "q1",
+        "letter": "(fhu,fhu|phu,phu|ftu,ftu|ptu,ptu|fha,fha|pha,pha|fta,fta|pta,pta|fhd,fhd|phd,phd|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q3",
+        "target": "q2",
+        "letter": "(fhu,fhu|phu,phu|fha,fha|pha,pha|fhd,fhd|phd,phd)"
+      },
+      {
+        "origin": "q4",
+        "target": "q2",
+        "letter": "(ftu,ftu|ptu,ptu|fta,fta|pta,pta|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q2",
+        "target": "q2",
+        "letter": "(fhu,fhu|phu,phu|ftu,ftu|ptu,ptu|fha,fha|pha,pha|fta,fta|pta,pta|fhd,fhd|phd,phd|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "fhu,fha"
+      },
+      {
+        "origin": "q1",
+        "target": "q3",
+        "letter": "fhu,fha"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "ftu,fta"
+      },
+      {
+        "origin": "q1",
+        "target": "q4",
+        "letter": "ftu,fta"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "fhu,fhd"
+      },
+      {
+        "origin": "q1",
+        "target": "q4",
+        "letter": "fhu,fhd"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "ftu,ftd"
+      },
+      {
+        "origin": "q1",
+        "target": "q3",
+        "letter": "ftu,ftd"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "phu,pha"
+      },
+      {
+        "origin": "q1",
+        "target": "q4",
+        "letter": "phu,pha"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "ptu,pta"
+      },
+      {
+        "origin": "q1",
+        "target": "q3",
+        "letter": "ptu,pta"
+      },
+      {
+        "origin": "q0",
+        "target": "q3",
+        "letter": "phu,phd"
+      },
+      {
+        "origin": "q1",
+        "target": "q3",
+        "letter": "phu,phd"
+      },
+      {
+        "origin": "q0",
+        "target": "q4",
+        "letter": "ptu,ptd"
+      },
+      {
+        "origin": "q1",
+        "target": "q4",
+        "letter": "ptu,ptd"
+      },
+      {
+        "origin": "q0",
+        "target": "q6",
+        "letter": "(fhu,fhu|phu,phu|fha,fha|pha,pha|fhd,fhd|phd,phd)"
+      },
+      {
+        "origin": "q0",
+        "target": "q7",
+        "letter": "(ftu,ftu|ptu,ptu|fta,fta|pta,pta|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q6",
+        "target": "q6",
+        "letter": "(fhu,fhu|phu,phu|ftu,ftu|ptu,ptu|fha,fha|pha,pha|fta,fta|pta,pta|fhd,fhd|phd,phd|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q7",
+        "target": "q7",
+        "letter": "(fhu,fhu|phu,phu|ftu,ftu|ptu,ptu|fha,fha|pha,pha|fta,fta|pta,pta|fhd,fhd|phd,phd|ftd,ftd|ptd,ptd)"
+      },
+      {
+        "origin": "q6",
+        "target": "q5",
+        "letter": "fhu,fha|ftu,ftd|phu,phd|ptu,pta"
+      },
+      {
+        "origin": "q7",
+        "target": "q5",
+        "letter": "fhu,fhd|ftu,fta|phu,pha|ptu,ptd"
+      }
+    ]
+  },
+  "properties": {
+    "external": {
+      "states": ["q0", "q1"],
+      "initialState": "q0",
+      "acceptingStates": ["q1"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "f.d"
+        },
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "f.a"
+        },
+        {
+          "origin": "q1",
+          "target": "q0",
+          "letter": "f.d"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "f.a"
+        }
+      ]
+    }
+  }
+}
