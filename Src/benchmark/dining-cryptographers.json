@@ -181,6 +181,73 @@
     ]
   },
   "properties": {
+    "internal": {
+      "states": ["q0", "q1", "q2", "q3"],
+      "initialState": "q0",
+      "acceptingStates": ["q2"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "f.d"
+        },
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "f.a"
+        },
+        {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "p.a"
+        },
+        {
+          "origin": "q0",
+          "target": "q3",
+          "letter": "p.d"
+        },
+        {
+          "origin": "q1",
+          "target": "q0",
+          "letter": "f.d"
+        },
+        {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "f.a"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "p.a"
+        },
+        {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "p.d"
+        },
+        {
+          "origin": "q3",
+          "target": "q2",
+          "letter": "..d"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "..a"
+        },
+        {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "..a"
+        },
+        {
+          "origin": "q2",
+          "target": "q3",
+          "letter": "..d"
+        }
+      ]
+    },
     "external": {
       "states": ["q0", "q1"],
       "initialState": "q0",
