@@ -1,4 +1,9 @@
 """Different one shot implementations"""
+import asyncio
+from multiprocessing import Pool, Manager
+
+from ray.thirdparty_files import psutil
+
 from Automata import NFATransducer, hash_state
 import numpy as np
 from Util import *
@@ -6,7 +11,8 @@ from itertools import chain, product, permutations
 from abc import ABC, abstractmethod
 from itertools import *
 import math
-from pyeda.inter import *
+import ray
+# from pyeda.inter import *
 import bitarray
 
 
@@ -39,6 +45,26 @@ class OneshotSmart:
                 print(f'{key} -> {self.cache[key]}')
 
     # TODO: implement one_shot_dfs with optimal cashing -> pick next state for which cashing entries exist
+
+    def check_trans(self, trans_succ, c, visited_states, work_set):
+        ib_trans, ib_succ = trans_succ[0], trans_succ[1]
+        u, v = self.alphabet_map.get_y(ib_trans), self.alphabet_map.get_x(ib_trans)
+        gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
+
+        # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
+        for d in self.step_game_gen_buffered_dfs(c, [], v, gs, []):
+            if (ib_succ, tuple(d)) not in visited_states:
+                visited_states.append((ib_succ, tuple(d)))
+                work_set.append((ib_succ, d))
+                self.i += 1
+
+                if self.IxB.is_final_state(ib_succ) and len(
+                        list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
+                    print(f'{ib_succ, d}')
+                    print("Result: x")
+                    return False
+        return True
+
     def one_shot_bfs(self):
         """Explores the IxB ∩ (reduced seperator transducer) in a breath first search"""
         # Pairing of the initial states of ixb ∩ (reduced seperator transducer)
@@ -49,31 +75,39 @@ class OneshotSmart:
         while len(work_set) != 0:
             (ib, c) = work_set.pop(0)
             # iterate over all transitions of the state ixb
-            for (ib_trans, ib_succ) in self.IxB.get_transitions(ib):
-
-                u, v = self.alphabet_map.get_y(ib_trans), self.alphabet_map.get_x(ib_trans)
-                gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
-
-                # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
-                for d in self.step_game_gen_buffered_dfs(c, [], v, gs, []):
-                    trans += 1
-                    if (ib_succ, tuple(d)) not in visited_states:
-                        visited_states.add((ib_succ, tuple(d)))
-                        work_set.append((ib_succ, d))
-                        self.i += 1
-                        # print(f'{self.i}')
-                        # print(f'{self.i}: {c}, {ib_trans}, {d}')
-
-                        if self.IxB.is_final_state(ib_succ) and len(
-                                list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-                            print(f'{ib_succ, d}')
-                            print("Result: x")
-                            return False
+            for trans_succ in self.IxB.get_transitions(ib):
+                if not self.check_trans(trans_succ, c, visited_states, work_set):
+                    return False
         print("# states: " + str(self.i))
         print("# cache hits: " + str(self.step_cache.cache_hits))
         print("# transitions: " + str(trans))
         print("Result: ✓")
         return True
+
+    def one_shot_bfs_multiprocessing(self):
+        """Explores the IxB ∩ (reduced seperator transducer) in a breath first search"""
+        # Pairing of the initial states of ixb ∩ (reduced seperator transducer)
+        init_tuple = (self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])
+        with Manager() as manager:
+            work_set = manager.list([init_tuple])
+            visited_states = manager.list([init_tuple])
+
+            while len(work_set) != 0:
+                (ib, c) = work_set.pop(0)
+                # iterate over all transitions of the state ixb
+
+                with Pool(processes=8) as pool:
+                    M = pool.starmap(self.check_trans,
+                                     zip(self.IxB.get_transitions(ib),
+                                     repeat(c), repeat(visited_states),
+                                     repeat(work_set)))
+                    if False in M:
+                        return False
+
+            print("# states: " + str(len(visited_states)))
+            print("# cache hits: " + str(self.step_cache.cache_hits))
+            print("Result: ✓")
+            return True
 
     def step_game_gen_simple_dfs(self, c1, c2, v, gs, visited):
         """
@@ -93,7 +127,8 @@ class OneshotSmart:
             yield c2, gs.I
 
         for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
-            for (qp_t, p) in trans_gen:  # TODO: can this part be parallelized? -> use one thread per (qp_t, p) pair until q has no more successors
+            for (qp_t,
+                 p) in trans_gen:  # TODO: can this part be parallelized? -> use one thread per (qp_t, p) pair until q has no more successors
                 x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
                 if symbol_not_in_seperator(gs.I, y):
                     if p not in c2:
@@ -339,80 +374,6 @@ class OneShotSimple:
                 current = self.root_nodes[(b1, b2, u, S)]
                 string_acc += "u: " + str(u) + " | S: " + bin(S) + "\n" + current.to_string(b1, b2, 1) + "\n"
             return string_acc
-
-    class StepGameMemoBDD(AbstractStepGameMemo):
-        """Memorizes Steps in the Step Game as BDD"""
-
-        def __init__(self, u_bits_num, state_bit_num):
-            self.u_bits_num = u_bits_num
-            self.S_bits_num = int(math.pow(2, self.u_bits_num))
-            self.state_bit_num = state_bit_num
-            self.column_len = int(math.pow(2, self.state_bit_num))
-            self.encoding_bit_num = self.u_bits_num + self.S_bits_num + 2 * (self.state_bit_num + self.column_len)
-            self.bdd_vars = list(map(lambda b: bddvar(f"b{b}", b), [*range(0, self.encoding_bit_num)]))
-            self.total_checks = 0
-            self.total_excluded = 0
-            self.f = None
-
-        def zero_padding(self, bin_num, length):
-            """pads bin_num with 0s"""
-            return ("0" * (length - len(bin_num))) + bin_num
-
-        def encode(self, c1, c2, u, S):  # TODO: Needs to become alot faster
-            """encodes c1, c2, u, S as a bitarray bin(u) + bin(S) + bin(c1) + bin(c2)"""
-            u_bin = self.zero_padding(format(u, "b"), self.u_bits_num)
-            S_bin = self.zero_padding(format(S, "b"), self.S_bits_num)
-            c1_bin = ""
-            c2_bin = ""
-            if c1 is not None:
-                c1_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c1)))
-            if c2 is not None:
-                c2_bin = "".join(list(map(lambda b: self.zero_padding(format(b, "b"), self.state_bit_num), c2)))
-
-            return bitarray.bitarray(u_bin + S_bin + c1_bin + c2_bin)
-
-        def add_node(self, c1, c2, u, S, I, miss):
-            """uses the encoding to set bbd_vars to (u & S & c1 & c2) | f_tmp"""
-            if not miss:
-                return
-
-            encoding = self.encode(c1, c2, u, S)
-
-            tmp = bddvar("tmp") | ~bddvar("tmp")
-            for i, bit in enumerate(encoding):
-                if bit:
-                    tmp = tmp & self.bdd_vars[i]
-                else:
-                    tmp = tmp & ~self.bdd_vars[i]
-            if self.f is None:
-                self.f = tmp
-            else:
-                self.f = self.f | tmp
-
-        def check_step(self, c1, c2, u, S, initial_I):
-            if self.f is None:
-                return Triple(0, initial_I, 0)
-            self.total_checks += 1
-            encoding = self.encode(c1, c2, u, S)
-
-            point = {self.bdd_vars[i]: bit for (i, bit) in enumerate(encoding)}
-
-            check = self.f.restrict(point)
-            if check:
-                self.total_excluded += 1
-                return None
-            else:
-                return Triple(0, initial_I, 0)
-
-        def print_statistics(self):
-            print("u bit size: " + str(self.u_bits_num))
-            print("S bit size: " + str(self.S_bits_num))
-            print("state bit size: " + str(self.state_bit_num))
-            print("max column len: " + str(self.column_len))
-            print("max encoding length: " + str(self.encoding_bit_num))
-            print("---------------------")
-            print("total checked: " + str(self.total_checks))
-            print("total excluded: " + str(self.total_excluded))
 
     def one_shot_bfs(self, I, T, B):
         """
