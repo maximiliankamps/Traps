@@ -19,6 +19,7 @@ class OneshotSmart:
         self.alphabet_map = T.get_alphabet_map()
         self.step_cache = self.StepGameCache()
         self.i = 0  # keeps count of the number of explored states
+        self.trans = 0
 
     class StepGameCache:
         def __init__(self):
@@ -37,6 +38,40 @@ class OneshotSmart:
         def print(self):
             for key in self.cache:
                 print(f'{key} -> {self.cache[key]}')
+
+    def one_shot_dfs(self):
+        (ib0, c0) = (self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])
+        visited_states = {(ib0, tuple(c0))}
+        for a in self.one_shot_dfs_helper(ib0, c0, visited_states):
+            return a
+        return None
+
+    def one_shot_dfs_helper(self, ib, c, visited_states):
+        # iterate over all transitions of the state ixb
+        for (ib_trans, ib_succ) in self.IxB.get_transitions(ib):
+            u, v = self.alphabet_map.get_y(ib_trans), self.alphabet_map.get_x(ib_trans)
+            gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
+
+            # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
+            for d in self.step_game_gen_buffered_dfs(c, [], v, gs, []):
+                self.trans += 1
+                if (ib_succ, tuple(d)) not in visited_states:
+                    visited_states.add((ib_succ, tuple(d)))
+                    self.i += 1
+                    print(self.i)
+                    if self.IxB.is_final_state(ib_succ) and len(
+                            list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
+                        yield ib_succ, d
+                    yield from self.one_shot_dfs_helper(ib_succ, d, visited_states)
+
+    def print_oneshot_result(self, result_bool):
+        print("# states: " + str(self.i))
+        print("# cache hits: " + str(self.step_cache.cache_hits))
+        print("# transitions: " + str(self.trans))
+        if result_bool is None:
+            print("Result: ✓")
+        else:
+            print("Result: x")
 
     # TODO: implement one_shot_dfs with optimal cashing -> pick next state for which cashing entries exist
     def one_shot_bfs(self):
@@ -61,19 +96,10 @@ class OneshotSmart:
                         visited_states.add((ib_succ, tuple(d)))
                         work_set.append((ib_succ, d))
                         self.i += 1
-                        # print(f'{self.i}')
-                        # print(f'{self.i}: {c}, {ib_trans}, {d}')
-
                         if self.IxB.is_final_state(ib_succ) and len(
                                 list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-                            print(f'{ib_succ, d}')
-                            print("Result: x")
-                            return False
-        print("# states: " + str(self.i))
-        print("# cache hits: " + str(self.step_cache.cache_hits))
-        print("# transitions: " + str(trans))
-        print("Result: ✓")
-        return True
+                            return ib_succ, d
+        return None
 
     def step_game_gen_simple_dfs(self, c1, c2, v, gs, visited):
         """
@@ -93,7 +119,8 @@ class OneshotSmart:
             yield c2, gs.I
 
         for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
-            for (qp_t, p) in trans_gen:  # TODO: can this part be parallelized? -> use one thread per (qp_t, p) pair until q has no more successors
+            for (qp_t,
+                 p) in trans_gen:  # TODO: can this part be parallelized? -> use one thread per (qp_t, p) pair until q has no more successors
                 x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
                 if symbol_not_in_seperator(gs.I, y):
                     if p not in c2:

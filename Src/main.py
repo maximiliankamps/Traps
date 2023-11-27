@@ -4,7 +4,7 @@ import Algorithms
 import Automata
 
 if __name__ == '__main__':
-    rts = Automata.RTS("Burns.json")
+    rts = Automata.RTS("token-passing.json")
     #(rts.get_IxB("sharedexclusive")).to_dot("test", None)
     """
     # Example of OneShotSimple
@@ -14,11 +14,11 @@ if __name__ == '__main__':
     # Example of OneShotSmart
     time_list = []
     t = rts.get_T()
-    ixb = rts.get_IxB("nomutex")
+    ixb = rts.get_IxB("modifiedmodified")
     for i in range(0, 1):
         start_time = time.time()
         o = Algorithms.OneshotSmart(ixb, t)
-        o.one_shot_bfs()
+        o.print_oneshot_result(o.one_shot_dfs())
         end_time = time.time()
 
         elapsed_time = end_time - start_time
