@@ -1,4 +1,6 @@
 """Different one shot implementations"""
+import itertools
+
 from Automata import NFATransducer, hash_state
 import numpy as np
 from Util import *
@@ -8,6 +10,34 @@ from itertools import *
 import math
 from pyeda.inter import *
 import bitarray
+
+import multiprocessing as mp
+
+
+def multi_disprove_oneshot(IxB, T):
+    init_states = T.get_final_states()
+    init_permutations = chain.from_iterable(permutations(init_states, r) for r in range(1, len(init_states) + 1))
+
+    one_shot_instances = {}
+    for init in init_permutations:
+        one_shot_instances[init] = OneshotSmart(IxB, T.copy_inverted())
+
+    processes = []
+    manager = mp.Manager()
+    return_code = manager.dict()
+    run = manager.Event()
+    run.set()  # We should keep running.
+    for init_state in one_shot_instances.keys():
+        process = mp.Process(
+            one_shot_instances[init_state].one_shot_dfs_process(run, (IxB.get_initial_states()[0], init_state), return_code)
+        )
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    print(return_code)
 
 
 class OneshotSmart:
@@ -39,8 +69,40 @@ class OneshotSmart:
             for key in self.cache:
                 print(f'{key} -> {self.cache[key]}')
 
-    def one_shot_dfs(self):
-        (ib0, c0) = (self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])
+    def min_sigma_disprove_oneshot(self):
+        """
+        Restrict the alphabet of T by the partial target alphabet of I and B.
+        One_shot result is only valid when it is False!
+        :return: False if property was disproved
+        """
+        self.T = self.T.copy_with_restricted_trans(self.IxB.partial_sigma_origin, self.IxB.partial_sigma_target)
+        value = self.one_shot_dfs_standard()
+        if not value:
+            print("Property could not be established!")
+        return value
+
+    def one_shot_dfs_process(self, run, initial_tuple, return_dict):
+        """
+        A one shot instance for multi disproving
+        :param run: Signal if an instance has already found a counter example
+        :param initial_tuple: the initial tuple of this instance
+        :param return_dict: A dictionary for the return value of one shot
+        :return:
+        """
+        print(f'{initial_tuple} started')
+        while run.is_set():
+            result = self.one_shot_dfs(initial_tuple)
+            return_dict[str(initial_tuple)] = result
+            if result is not None and len(result):
+                run.clear()
+
+    def one_shot_dfs_standard(self):
+        """Explore reduced seperator transducer from initial state pair in dfs"""
+        return self.one_shot_dfs((self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]]))
+
+    def one_shot_dfs(self, initial_tuple):
+        """Explore reduced seperator transducer from initial_tuple in dfs and return the first counterexample"""
+        (ib0, c0) = initial_tuple
         visited_states = {(ib0, tuple(c0))}
         for a in self.one_shot_dfs_helper(ib0, c0, visited_states):
             return a
@@ -58,7 +120,7 @@ class OneshotSmart:
                 if (ib_succ, tuple(d)) not in visited_states:
                     visited_states.add((ib_succ, tuple(d)))
                     self.i += 1
-                    print(self.i)
+                    #print(self.i)
                     if self.IxB.is_final_state(ib_succ) and len(
                             list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
                         yield ib_succ, d

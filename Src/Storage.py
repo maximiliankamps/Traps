@@ -54,7 +54,7 @@ class SimpleStorageNFA(AbstractStorage):
         return None
 
     def state_iterator(self):
-        return range(0, self.state_count)
+        return self.dictionary.keys()
 
     def transition_iterator(self, origin):
         if self.dictionary.get(origin) is None:

@@ -177,6 +177,18 @@
           "letter": "m"
         }
       ]
+    },
+    "m|e|s|i": {
+      "states": ["q0"],
+      "initialState": "q0",
+      "acceptingStates": ["q0"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(m|e|s|i)"
+        }
+      ]
     }
   }
 }

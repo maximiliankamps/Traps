@@ -54,6 +54,8 @@ class NFATransducer(AbstractTransducer):
         self.initial_states = []
         self.final_states = []
         self.alphabet_map = alphabet_map
+        self.partial_sigma_origin = set()  # contains all used origin symbols
+        self.partial_sigma_target = set()  # contains all used target symbols
         self.transitions = Storage.SimpleStorageNFA()
         self.statistics = Storage.Statistics()
 
@@ -76,7 +78,8 @@ class NFATransducer(AbstractTransducer):
         return state in self.final_states
 
     def add_final_state(self, state):
-        self.final_states.append(state)
+        if state not in self.final_states:
+            self.final_states.append(state)
 
     def add_final_state_list(self, state_list):
         self.final_states.extend(state_list)
@@ -88,6 +91,8 @@ class NFATransducer(AbstractTransducer):
         return self.alphabet_map
 
     def add_transition(self, origin, symbol_index, target):
+        self.partial_sigma_origin.add(self.alphabet_map.get_x(symbol_index))
+        self.partial_sigma_target.add(self.alphabet_map.get_y(symbol_index))
         self.transitions.add_transition(origin, symbol_index, target)
 
     def get_transitions(self, origin):
@@ -99,25 +104,51 @@ class NFATransducer(AbstractTransducer):
     def state_iterator(self):
         return self.transitions.state_iterator()
 
+    def copy_inverted(self):
+        """Create a copy of the transducer and invert all transitions and final and initial states"""
+        copy = NFATransducer(self.alphabet_map)
+        copy.initial_states = self.final_states
+        copy.final_states = self.initial_states
+        for q in self.state_iterator():
+            for (symbol, p) in self.transitions.transition_iterator(q):
+                copy.add_transition(p, symbol, q)
+        return copy
+
+    def copy_with_restricted_trans(self, origin_symbols, target_symbols):
+        """
+        Create a copy of the transducer and remove all transitions where:
+        :param origin_symbols: x not in origin symbol or
+        :param target_symbols: y not in target symbol
+        :return:
+        """
+        copy = NFATransducer(self.alphabet_map)
+        copy.initial_states = self.initial_states
+        for q in self.state_iterator():
+            for (symbol, p) in self.transitions.transition_iterator(q):
+                if self.alphabet_map.get_x(symbol) in origin_symbols and self.alphabet_map.get_y(
+                        symbol) in target_symbols:
+                    copy.add_transition(q, symbol, p)
+                    if p in self.final_states:
+                        copy.add_final_state(p)
+        return copy
+
     def to_dot(self, filename, column_hashing):
         g = gviz.Digraph('G', filename="Pictures/" + f'{filename}')
 
-        for source in range(0, 100):
-            for x in self.alphabet_map.sigma:
-                for y in self.alphabet_map.sigma:
-                    target = self.get_successor(source, self.alphabet_map.combine_symbols(x, y))
-                    if target is not None:
-                        for target_node in target:
-
-                            if column_hashing is not None:
-                                g.node(column_hashing.get_column_str(source), column_hashing.get_column_str(source),
-                                       shape="circle")
-                                g.edge(column_hashing.get_column_str(source),
-                                       column_hashing.get_column_str(target_node),
-                                       x + "\n" + y)
-                            else:
-                                g.node(str(source), str(source), shape="circle")
-                                g.edge(str(source), str(target_node), x + "\n" + y)
+        for source in self.state_iterator():
+            for (symbol, target) in self.transitions.transition_iterator(source):
+                x = self.alphabet_map.int_to_symbol(self.alphabet_map.get_x(symbol))
+                y = self.alphabet_map.int_to_symbol(self.alphabet_map.get_y(symbol))
+                if target is not None:
+                    if column_hashing is not None:
+                        g.node(column_hashing.get_column_str(source), column_hashing.get_column_str(source),
+                               shape="circle")
+                        g.edge(column_hashing.get_column_str(source),
+                               column_hashing.get_column_str(target),
+                               x + "\n" + y)
+                    else:
+                        g.node(str(source), str(source), shape="circle")
+                        g.edge(str(source), str(target), x + "\n" + y)
 
         g.view()
 
@@ -158,6 +189,48 @@ class NFATransducer(AbstractTransducer):
                                     W.append((q1_target, q2_target))
                                 T_new.add_transition(q1_q2_hash, a_b, q1_q2_target_hash)
         return T_new
+
+    def nfa_to_dfa(self):
+        result = NFATransducer(self.alphabet_map)
+        work_queue = [self.initial_states.copy()]
+        visited = [self.initial_states.copy()]
+        result.initial_states = list(map(lambda x: hash_state([x], 0), self.initial_states.copy()))
+
+        while len(work_queue) != 0:
+            q_list = work_queue.pop(0)
+
+            new_q = hash_state(q_list, 0)
+            if any(map(lambda x: x in self.final_states, q_list)):
+                result.add_final_state(new_q)
+
+            for t in self.alphabet_map.sigma_x_sigma_iterator():
+                p_gen = filter(lambda x: x is not None, map(lambda q: self.get_successor(q, t), q_list))
+                p_list = list(set(chain.from_iterable(p_gen)))
+                if p_list:
+                    new_p = hash_state(p_list, 0)
+                    if p_list not in visited:
+                        work_queue.append(p_list)
+                        visited.append(p_list)
+                    result.add_transition(new_q, t, new_p)
+        return result
+
+    def project_origin(self):
+        result = NFATransducer(self.alphabet_map)
+        result.initial_states = self.initial_states.copy()
+        result.final_states = self.final_states.copy()
+        for q in self.state_iterator():
+            for (symbol, p) in self.get_transitions(q):
+                origin = self.alphabet_map.get_x(symbol)
+                result.add_transition(q, self.alphabet_map.combine_x_and_y(origin, origin), p)
+        return result
+
+    def get_deadlock_transducer(self):
+        D = self.project_origin().nfa_to_dfa()
+        D.final_states = list(set(D.state_iterator()).difference(set(D.final_states.copy())))
+        return D
+
+    def minimize(self):
+        return 0
 
 
 def parse_transition_regex(regex, alph_map, id):
@@ -221,6 +294,7 @@ class RTS:
         initial_dict = rts_dict["initial"]
         transducer_dict = rts_dict["transducer"]
         properties_dict = rts_dict["properties"]
+        deadlock_threshold = rts_dict["deadlockThreshold"]
 
         self.T = self.build_transducer(transducer_dict, alphabet_map, False)
         self.I = self.build_transducer(initial_dict, alphabet_map, True)
@@ -228,24 +302,15 @@ class RTS:
         self.B_dict = {name: self.build_transducer(properties_dict[name], alphabet_map, True) for name in
                        properties_dict}
 
-        self.IxB_dict = {name: self.build_cross_transducer(initial_dict, properties_dict[name]) for name in
+        self.IxB_dict = {name: self.build_IxB_transducer(initial_dict, properties_dict[name]) for name in
                          properties_dict}
+
+        self.IxB_dict = {"deadlock": self.build_SxD_transducer(deadlock_threshold)}
 
         self.alphabet_map = alphabet_map
 
-    def build_cross_transducer(self, I_dict, B_dict):
-
-        t1 = parse_transition_regex_dfa(I_dict["transitions"], self.alphabet_map)
-        f1 = list(map(lambda q: int(q[1:]), I_dict["acceptingStates"]))
-
-        t2 = parse_transition_regex_dfa(B_dict["transitions"], self.alphabet_map)
-        f2 = list(map(lambda q: int(q[1:]), B_dict["acceptingStates"]))
-
+    def pair_transducers(self, q0, p0, t1, t2, f1, f2):
         result = NFATransducer(self.alphabet_map)
-
-        q0 = int(I_dict["initialState"][1:])
-        p0 = int(B_dict["initialState"][1:])
-
         result.add_initial_state(hash_state([q0, p0], 0))
 
         Q = [(q0, p0)]
@@ -270,6 +335,39 @@ class RTS:
                         if (p1, p2) not in W:
                             Q.append((p1, p2))
         return result
+
+    def build_IxB_transducer(self, I_dict, B_dict):
+        t1 = parse_transition_regex_dfa(I_dict["transitions"], self.alphabet_map)
+        f1 = list(map(lambda q: int(q[1:]), I_dict["acceptingStates"]))
+
+        t2 = parse_transition_regex_dfa(B_dict["transitions"], self.alphabet_map)
+        f2 = list(map(lambda q: int(q[1:]), B_dict["acceptingStates"]))
+
+        q0 = int(I_dict["initialState"][1:])
+        p0 = int(B_dict["initialState"][1:])
+
+        return self.pair_transducers(q0, p0, t1, t2, f1, f2)
+
+    def build_SxD_transducer(self, deadlock_threshold):
+        D = self.T.get_deadlock_transducer()
+
+        t1 = []
+        for i in range(0, deadlock_threshold):
+            for x in self.alphabet_map.sigma_iterator():
+                t1.extend([(i, x, i), (i, x, i+1)])
+        f1 = [deadlock_threshold-1]
+
+        t2 = []
+        for q in D.state_iterator():
+            for (s, p) in D.get_transitions(q):
+                t2.append((q, self.alphabet_map.get_x(s), p))
+        f2 = D.final_states.copy()
+
+        q0 = 0
+        p0 = D.initial_states[0]
+
+        return self.pair_transducers(q0, p0, t1, t2, f1, f2)
+
 
     def built_id_transducer(self, nfa_dict, alph_map):
         id_transducer = NFATransducer(alph_map)
