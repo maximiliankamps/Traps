@@ -123,7 +123,7 @@ class OneshotSmart:
                     #print(self.i)
                     if self.IxB.is_final_state(ib_succ) and len(
                             list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-                        print(ib_succ, d)
+                        #print(ib_succ, d)
                         yield ib_succ, d
                     yield from self.one_shot_dfs_helper(ib_succ, d, visited_states)
 
@@ -220,7 +220,6 @@ class OneshotSmart:
             return
 
         if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
-
             visited.append(c2)
             #print("winning")
             yield c2
@@ -245,6 +244,66 @@ class OneshotSmart:
                         #print(f'step: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p}')
                         yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
         self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
+
+    def step_game_gen_buffered_dfs_2(self, c1, c2, v, gs, winning):
+        """
+        Uses the same buffer as the one_shot implementation of dodo, returns states d in a depth first search
+        :param c1: List of the from-column
+        :param c2: List of the to-column
+        :param v: The symbol to be removed from the seperator
+        :param gs: The game state <l, I, r>
+        :param winning: A list keeping track of all winning states d
+        :param visited:
+        :return: Lazily return states d
+        """
+        #print(f'{c2} + {gs}')
+        next_marked = []  # store if the next step gs_, c_ has been explored already
+        if c2 in map(lambda d_gs: d_gs[0], winning):  # Return if c2 has been visited
+            return
+        cache_hit = self.step_cache.get_entry(c1, gs, v, c2)  # Check if this partially played game is in cache
+        if cache_hit is not None:
+            for hit in cache_hit:
+                yield hit[0]
+            return
+
+        if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
+            winning.append((c2, gs))
+            #print("winning")
+            yield c2
+
+        cache_hit = self.step_cache.get_entry(c1[:gs.l], gs, v, c2)  # Check if this partially played game is in cache
+        d_new_list = []
+        if cache_hit is not None:
+            for hit in cache_hit:
+                d_new = hit[0]
+                gs_ = hit[1]
+                if len(d_new) > len(c2) and (gs_.l, gs_.I, d_new) not in next_marked:
+                    next_marked.append((gs_.l, gs_.I, d_new))
+                    d_new_list.append(d_new)
+                    yield from self.step_game_gen_buffered_dfs_2(c1, d_new, v, gs_, winning)
+        for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
+            for (qp_t, p) in trans_gen:
+                if p in d_new_list:
+                    continue
+                x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
+                if symbol_not_in_seperator(gs.I, y):
+                    if p not in c2:
+                        c2_ = c2 + [p]
+                        if c2_ in winning:
+                            continue
+                    else:
+                        c2_ = c2
+                    gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
+                                 refine_seperator(gs.I, x),
+                                 gs.r + (1, 0)[p in c2])
+                    #if (gs_.l, gs_.I, c2_) in next_marked:
+                        #print(f'marked: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p} + {str(gs_)}')
+                    if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
+                        next_marked.append((gs_.l, gs_.I, c2_))
+                        #print(f'step: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p}')
+                        yield from self.step_game_gen_buffered_dfs_2(c1, c2_, v, gs_, winning)
+        self.step_cache.add_entry(c1, gs, v, c2, winning)  # Add Game to cache
+
 
     def step_game_gen_buffered_bfs(self, c1, c2, v, gs, visited):
         """

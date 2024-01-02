@@ -21,24 +21,19 @@ if __name__ == '__main__':
     rts = Automata.RTS("voting-token-start.json")
     a = rts.get_T().alphabet_map
 
-    for u, v in product(range(0, 4), range(0, 4)):
-        print(f'---------{a.transition_to_str(a.combine_x_and_y(u, v))}---------')
-        log_succ(1, u, v)
+    print(f'---------{a.transition_to_str(a.combine_x_and_y(0, 2))}---------')
+    log_succ([1,2], 3, 2)
 
-    print(f'---------{a.transition_to_str(a.combine_x_and_y(2, 2))}---------')
-    log_succ([1,1], 2, 2)
 """
-
-
 if __name__ == '__main__':
-    rts = Automata.RTS("Berkeley.json")
+    rts = Automata.RTS("MESI.json")
 
     time_list = []
     t = rts.get_T()
     i = rts.get_I()
-    ixb = rts.get_IxB("exclusiveexclusive")
+    ixb = rts.get_IxB("modifiedmodified")
 
-    t.to_dot("x", None)
+    #t.to_dot("x", None)
     #t.to_dot("initial", None)
     for i in range(0, 1):
         start_time = time.time()
