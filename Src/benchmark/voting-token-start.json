@@ -1,0 +1,123 @@
+{
+  "description": "Journey to Jerusalem.",
+  "deadlockThreshold": 2,
+  "alphabet": ["i", "r", "t", "m"],
+  "initial": {
+    "states": ["q0", "q1"],
+    "initialState": "q0",
+    "acceptingStates": ["q1"],
+    "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "i"
+        }, {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "t"
+        }, {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "i"
+        }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3"],
+    "initialState": "q0",
+    "acceptingStates": ["q4", "q5"],
+    "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "m,m"
+        },
+        {
+          "origin": "q0",
+          "target": "q3",
+          "letter": "t,m"
+        },
+        {
+          "origin": "q1",
+          "target": "q3",
+          "letter": "t,m"
+        }, {
+          "origin": "q3",
+          "target": "q4",
+          "letter": "r,t"
+        },
+        {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(i,i|i,r|m,m|r,r)"
+        },
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "(i,i|i,r|m,m)"
+        }, {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(i,i|i,r|m,m|r,r)"
+        }, {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "r,t"
+        }, {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "r,t"
+        }, {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "(i,i|i,r|m,m|r,r)"
+        }, {
+          "origin": "q2",
+          "target": "q4",
+          "letter": "t,m"
+        }, {
+          "origin": "q4",
+          "target": "q4",
+          "letter": "(i,i|i,r|m,m)"
+        }
+    ]
+  },
+  "properties": {
+    "gamewon": {
+      "states": [
+        "q0"
+      ],
+      "initialState": "q0",
+      "acceptingStates": ["q0"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "m"
+        }
+      ]
+    },
+    "notokennomarked": {
+      "states": [
+        "q0, q1"
+      ],
+      "initialState": "q0",
+      "acceptingStates": ["q1"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(m|i|r)"
+        }, {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "(i|r)"
+        }, {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(m|i|r)"
+        }
+      ]
+    }
+  }
+}

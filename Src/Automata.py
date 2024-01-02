@@ -305,7 +305,7 @@ class RTS:
         self.IxB_dict = {name: self.build_IxB_transducer(initial_dict, properties_dict[name]) for name in
                          properties_dict}
 
-        self.IxB_dict = {"deadlock": self.build_SxD_transducer(deadlock_threshold)}
+        self.IxB_dict["deadlock"] = self.build_SxD_transducer(deadlock_threshold)
 
         self.alphabet_map = alphabet_map
 

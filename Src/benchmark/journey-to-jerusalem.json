@@ -1,0 +1,159 @@
+{
+  "description": "Journey to Jerusalem.",
+  "deadlockThreshold": 2,
+  "alphabet": ["p", "c", "e"],
+  "initial": {
+    "states": [
+      "q0",
+      "q1",
+      "q2",
+      "q3"
+    ],
+    "initialState": "q0",
+    "acceptingStates": [
+      "q3"
+    ],
+    "transitions": [
+      {
+        "origin": "q0",
+        "target": "q1",
+        "letter": "p"
+      },
+      {
+        "origin": "q1",
+        "target": "q2",
+        "letter": "p"
+      },
+      {
+         "origin": "q2",
+         "target": "q3",
+         "letter": "p"
+      }
+    ]
+  },
+  "transducer": {
+    "states": ["q0", "q1", "q2", "q3", "q4", "q5"],
+    "initialState": "q0",
+    "acceptingStates": ["q1", "q5"],
+    "transitions": [
+        {
+          "origin": "q0",
+          "target": "q1",
+          "letter": "(c,c|e,e)"
+        }, {
+          "origin": "q0",
+          "target": "q2",
+          "letter": "p,e"
+        }, {
+          "origin": "q1",
+          "target": "q1",
+          "letter": "(c,c|e,e)"
+        }, {
+          "origin": "q1",
+          "target": "q2",
+          "letter": "p,e"
+        }, {
+          "origin": "q2",
+          "target": "q2",
+          "letter": "p,p"
+        }, {
+          "origin": "q2",
+          "target": "q1",
+          "letter": "(e,p|c,e)"
+        }, {
+          "origin": "q0",
+          "target": "q3",
+          "letter": "(e,p|c,e)"
+        }, {
+          "origin": "q0",
+          "target": "q4",
+          "letter": "p,p"
+        }, {
+          "origin": "q3",
+          "target": "q3",
+          "letter": "(c,c|e,e)"
+        }, {
+          "origin": "q3",
+          "target": "q4",
+          "letter": "p,e"
+        }, {
+          "origin": "q4",
+          "target": "q3",
+          "letter": "(e,p|c,e)"
+        }, {
+          "origin": "q4",
+          "target": "q4",
+          "letter": "p,p"
+        }, {
+          "origin": "q3",
+          "target": "q5",
+          "letter": "p,e"
+        }, {
+          "origin": "q4",
+          "target": "q5",
+          "letter": "p,p"
+        }
+    ]
+  },
+  "properties": {
+    "gamewon": {
+      "states": [
+        "q0"
+      ],
+      "initialState": "q0",
+      "acceptingStates": ["q0"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "e"
+        }
+      ]
+    },
+    "justplayers": {
+      "states": [
+        "q0, q1"
+      ],
+      "initialState": "q0",
+      "acceptingStates": ["q1"],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(e|p)"
+        }, {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "p"
+        }, {
+          "origin": "q0",
+          "target": "q0",
+          "letter": "(e|p)"
+        }
+      ]
+    },
+    "justchairs": {
+        "states": [
+          "q0, q1"
+        ],
+        "initialState": "q0",
+        "acceptingStates": ["q1"],
+        "transitions": [
+          {
+            "origin": "q0",
+            "target": "q0",
+            "letter": "(e|c)"
+          }, {
+            "origin": "q0",
+            "target": "q1",
+            "letter": "c"
+          }, {
+            "origin": "q1",
+            "target": "q1",
+            "letter": "(e|c)"
+          }
+        ]
+      }
+    }
+
+}
