@@ -23,9 +23,8 @@ if __name__ == '__main__':
     rts = Automata.RTS("voting-token-start.json")
     a = rts.get_T().alphabet_map
 
-    print(f'---------{a.transition_to_str(a.combine_x_and_y(0, 2))}---------')
-    log_succ([1,2], 3, 2)
-
+    print(f'---------{a.transition_to_str(a.combine_x_and_y(1, 1))}---------')
+    log_succ([1,2], 1, 1)
 """
 
 benchmarks = [
@@ -76,7 +75,7 @@ def try_one(func, t, gen_imp):
     return result
 
 
-max_time = 20
+max_time = 300
 
 
 def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous):
@@ -99,7 +98,9 @@ def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous)
             print(test)
             rts = Automata.RTS(benchmark_name)
             t = rts.get_T()
+
             ixb = rts.get_IxB(test)
+            #ixb.to_dot("deadlock", None)
 
             start_time = time.time()
 
@@ -123,5 +124,11 @@ def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous)
             print("------------------------------------------------")
 
 
+
 if __name__ == '__main__':
-    execute_benchmarks(benchmarks, "buffer_dfs", "dfs", True)
+    # execute_benchmarks(benchmarks, "buffer_dfs", "dfs", True)
+    benchmarks = [("voting-token-passing.json", ["gamewon"])]
+    #execute_benchmarks(benchmarks, "buffer_dfs", "dfs", True)
+    execute_benchmarks(benchmarks, "buffer_bfs", "bfs", True)
+    #execute_benchmarks(benchmarks, "buffer_bfs", "bfs", True)
+

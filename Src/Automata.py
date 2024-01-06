@@ -234,6 +234,8 @@ class NFATransducer(AbstractTransducer):
     def get_deadlock_transducer(self):
         D = self.project_origin().nfa_to_dfa()
         D.final_states = list(set(D.state_iterator()).difference(set(D.final_states.copy())))
+        #self.to_dot("T", None)
+        #D.to_dot("dead", None)
         return D
 
     def minimize(self):
@@ -356,20 +358,20 @@ class RTS:
         return self.pair_transducers(q0, p0, t1, t2, f1, f2)
 
     def build_SxD_transducer(self, deadlock_threshold):
-        D = self.T.get_deadlock_transducer()
-        t1 = D.all_transitions()
-        f1 = D.final_states
-
-        t2 = []
+        t1 = []
         for i in range(0, deadlock_threshold):
             for x in self.alphabet_map.sigma_iterator():
-                t2.append((i, x, i+1))
-                if i == deadlock_threshold-1: # self loops at last state
-                    t2.append((i+1, x, i+1))
-        f2 = [deadlock_threshold-1]
+                t1.append((i, x, i + 1))
+                if i == deadlock_threshold - 1:  # self loops at last state
+                    t1.append((i + 1, x, i + 1))
+        f1 = [deadlock_threshold - 1]
 
-        q0 = D.get_initial_states()[0]
-        p0 = 0
+        D = self.T.get_deadlock_transducer()
+        t2 = D.all_transitions()
+        f2 = D.final_states
+
+        q0 = 0
+        p0 = D.get_initial_states()[0]
 
         return self.pair_transducers(q0, p0, t1, t2, f1, f2)
 
