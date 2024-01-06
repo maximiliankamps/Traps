@@ -14,36 +14,14 @@ import bitarray
 import multiprocessing as mp
 
 
-def multi_disprove_oneshot(IxB, T):
-    init_states = T.get_final_states()
-    init_permutations = chain.from_iterable(permutations(init_states, r) for r in range(1, len(init_states) + 1))
 
-    one_shot_instances = {}
-    for init in init_permutations:
-        one_shot_instances[init] = OneshotSmart(IxB, T.copy_inverted())
-
-    processes = []
-    manager = mp.Manager()
-    return_code = manager.dict()
-    run = manager.Event()
-    run.set()  # We should keep running.
-    for init_state in one_shot_instances.keys():
-        process = mp.Process(
-            one_shot_instances[init_state].one_shot_dfs_process(run, (IxB.get_initial_states()[0], init_state), return_code)
-        )
-        processes.append(process)
-        process.start()
-
-    for process in processes:
-        process.join()
-
-    print(return_code)
 
 
 class OneshotSmart:
     """OneShot implementation similar to the one in dodo"""
 
     def __init__(self, IxB, T):
+        self.ignore_ambiguous = False
         self.IxB = IxB
         self.T = T
         self.alphabet_map = T.get_alphabet_map()
@@ -69,19 +47,45 @@ class OneshotSmart:
             for key in self.cache:
                 print(f'{key} -> {self.cache[key]}')
 
-    def min_sigma_disprove_oneshot(self):
+    def multi_disprove_oneshot(self, gen_func):
+        init_states = self.T.get_final_states()
+        init_permutations = chain.from_iterable(permutations(init_states, r) for r in range(1, len(init_states) + 1))
+
+        one_shot_instances = {}
+        for init in init_permutations:
+            one_shot_instances[init] = OneshotSmart(self.IxB, self.T.copy_inverted())
+
+        processes = []
+        manager = mp.Manager()
+        return_code = manager.dict()
+        run = manager.Event()
+        run.set()  # We should keep running.
+        for init_state in one_shot_instances.keys():
+            process = mp.Process(
+                one_shot_instances[init_state].one_shot_dfs_process(run, (self.IxB.get_initial_states()[0], init_state),
+                                                                    return_code, gen_func)
+            )
+            processes.append(process)
+            process.start()
+
+        for process in processes:
+            process.join()
+
+        print(return_code)
+
+    def min_sigma_disprove_oneshot(self, gen_func):
         """
         Restrict the alphabet of T by the partial target alphabet of I and B.
         One_shot result is only valid when it is False!
         :return: False if property was disproved
         """
         self.T = self.T.copy_with_restricted_trans(self.IxB.partial_sigma_origin, self.IxB.partial_sigma_target)
-        value = self.one_shot_dfs_standard()
+        value = self.one_shot_dfs_standard(gen_func)
         if not value:
             print("Property could not be established!")
         return value
 
-    def one_shot_dfs_process(self, run, initial_tuple, return_dict):
+    def one_shot_dfs_process(self, run, initial_tuple, return_dict, gen_func):
         """
         A one shot instance for multi disproving
         :param run: Signal if an instance has already found a counter example
@@ -91,41 +95,42 @@ class OneshotSmart:
         """
         print(f'{initial_tuple} started')
         while run.is_set():
-            result = self.one_shot_dfs(initial_tuple)
+            result = self.one_shot_dfs(initial_tuple, gen_func)
             return_dict[str(initial_tuple)] = result
             if result is not None and len(result):
                 run.clear()
 
-    def one_shot_dfs_standard(self):
+    def one_shot_dfs_standard(self, gen_func):
         """Explore reduced seperator transducer from initial state pair in dfs"""
-        return self.one_shot_dfs((self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]]))
+        return self.one_shot_dfs((self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]]), gen_func)
 
-    def one_shot_dfs(self, initial_tuple):
+    #################################################################################################
+    def one_shot_dfs(self, initial_tuple, gen_func):
         """Explore reduced seperator transducer from initial_tuple in dfs and return the first counterexample"""
         (ib0, c0) = initial_tuple
         visited_states = {(ib0, tuple(c0))}
-        for a in self.one_shot_dfs_helper(ib0, c0, visited_states):
+        for a in self.one_shot_dfs_helper(ib0, c0, visited_states, gen_func):
             return a
         return None
 
-    def one_shot_dfs_helper(self, ib, c, visited_states):
+    def one_shot_dfs_helper(self, ib, c, visited_states, gen_func):
         # iterate over all transitions of the state ixb
         for (ib_trans, ib_succ) in self.IxB.get_transitions(ib):
             u, v = self.alphabet_map.get_y(ib_trans), self.alphabet_map.get_x(ib_trans)
             gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
 
             # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
-            for d in self.step_game_gen_buffered_dfs(c, [], v, gs, []):
+            for d in gen_func(self, c, [], v, gs, []):
                 self.trans += 1
                 if (ib_succ, tuple(d)) not in visited_states:
                     visited_states.add((ib_succ, tuple(d)))
                     self.i += 1
-                    #print(self.i)
+                    # print(self.i)
                     if self.IxB.is_final_state(ib_succ) and len(
                             list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
-                        #print(ib_succ, d)
+                        # print(ib_succ, d)
                         yield ib_succ, d
-                    yield from self.one_shot_dfs_helper(ib_succ, d, visited_states)
+                    yield from self.one_shot_dfs_helper(ib_succ, d, visited_states, gen_func)
 
     def print_oneshot_result(self, result_bool):
         print("# states: " + str(self.i))
@@ -137,7 +142,7 @@ class OneshotSmart:
             print("Result: x")
 
     # TODO: implement one_shot_dfs with optimal cashing -> pick next state for which cashing entries exist
-    def one_shot_bfs(self):
+    def one_shot_bfs(self, gen_func):
         """Explores the IxB ∩ (reduced seperator transducer) in a breath first search"""
         # Pairing of the initial states of ixb ∩ (reduced seperator transducer)
         (ib0, c0) = (self.IxB.get_initial_states()[0], [self.T.get_initial_states()[0]])
@@ -153,7 +158,7 @@ class OneshotSmart:
                 gs = Triple(0, refine_seperator(self.alphabet_map.get_bit_map_sigma(), u), 0)
 
                 # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
-                for d in self.step_game_gen_buffered_dfs(c, [], v, gs, []):
+                for d in gen_func(self, c, [], v, gs, []):
                     trans += 1
                     if (ib_succ, tuple(d)) not in visited_states:
                         visited_states.add((ib_succ, tuple(d)))
@@ -165,43 +170,15 @@ class OneshotSmart:
         return None
 
     def step_game_gen_simple_dfs(self, c1, c2, v, gs, visited):
-        """
-        :param c1: List of the from-column
-        :param c2: List of the to-column
-        :param v: The symbol to be removed from the seperator
-        :param gs: The game state <l, I, r>
-        :param visited: A list keeping track of all winning states d
-        :return: Lazily return states d
-        """
-        next_marked = []  # store if the next step gs_, c_ has been explored already
-        if c2 in visited:  # Return if c2 has been visited
-            return
-
-        if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
-            visited.append(c2)
-            yield c2, gs.I
-
-        for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
-            for (qp_t,
-                 p) in trans_gen:  # TODO: can this part be parallelized? -> use one thread per (qp_t, p) pair until q has no more successors
-                x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
-                if symbol_not_in_seperator(gs.I, y):
-                    if p not in c2:
-                        c2_ = c2 + [p]
-                        if c2_ in visited:
-                            continue
-                    else:
-                        c2_ = c2
-                    gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
-                                 refine_seperator(gs.I, x),
-                                 gs.r + (1, 0)[p in c2])
-                    if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
-                        next_marked.append((gs_.l, gs_.I, c2_))
-                        yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
+        yield from self.step_game_gen_dfs(c1, c2, v, gs, visited, False)
 
     def step_game_gen_buffered_dfs(self, c1, c2, v, gs, visited):
+        yield from self.step_game_gen_dfs(c1, c2, v, gs, visited, True)
+
+    def step_game_gen_dfs(self, c1, c2, v, gs, visited, use_buffer):
         """
         Uses the same buffer as the one_shot implementation of dodo, returns states d in a depth first search
+        :param use_buffer:
         :param c1: List of the from-column
         :param c2: List of the to-column
         :param v: The symbol to be removed from the seperator
@@ -209,19 +186,20 @@ class OneshotSmart:
         :param visited: A list keeping track of all winning states d
         :return: Lazily return states d
         """
-        #print(f'{c2} + {gs}')
+        # print(f'{c2} + {gs}')
         next_marked = []  # store if the next step gs_, c_ has been explored already
         if c2 in visited:  # Return if c2 has been visited
             return
-        cache_hit = self.step_cache.get_entry(c1, gs, v, c2)  # Check if this partially played game is in cache
-        if cache_hit is not None:
-            for hit in cache_hit:
-                yield hit
-            return
+        if use_buffer:
+            cache_hit = self.step_cache.get_entry(c1, gs, v, c2)  # Check if this partially played game is in cache
+            if cache_hit is not None:
+                for hit in cache_hit:
+                    yield hit
+                return
 
         if len(c1) == gs.l and symbol_not_in_seperator(gs.I, v):  # Return c2 if step game is won
             visited.append(c2)
-            #print("winning")
+            # print("winning")
             yield c2
 
         for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
@@ -237,12 +215,13 @@ class OneshotSmart:
                     gs_ = Triple(gs.l + (1, 0)[q in c1[:gs.l]],
                                  refine_seperator(gs.I, x),
                                  gs.r + (1, 0)[p in c2])
-                    #if (gs_.l, gs_.I, c2_) in next_marked:
-                        #print(f'marked: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p} + {str(gs_)}')
+                    # if (gs_.l, gs_.I, c2_) in next_marked:
+                    # print(f'marked: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p} + {str(gs_)}')
                     if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
-                        next_marked.append((gs_.l, gs_.I, c2_))
-                        #print(f'step: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p}')
-                        yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
+                        if self.ignore_ambiguous:
+                            next_marked.append((gs_.l, gs_.I, c2_))
+                        # print(f'step: {q}, {self.alphabet_map.transition_to_str(qp_t)}, {p}')
+                        yield from self.step_game_gen_dfs(c1, c2_, v, gs_, visited, use_buffer)
         self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
 
     def step_game_gen_buffered_dfs_2(self, c1, c2, v, gs, winning):
@@ -275,19 +254,7 @@ class OneshotSmart:
 
         cache_hit2 = None
         if len(c1) > gs.l + 1:
-            cache_hit2 = self.step_cache.get_entry(c1[:gs.l+1], gs, v, c2)
-
-        """
-        if cache_hit and cache_hit2:
-            for hit in cache_hit:
-                c2_ = hit[0]
-                gs_ = hit[1]
-                if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked and len(c2_) == len(c2) + 1:
-                    next_marked.append((gs_.l, gs_.I, c2_))
-                    yield from self.step_game_gen_buffered_dfs_2(c1, c2_, v, gs_, winning)
-        """
-        if False:
-            print("yes")
+            cache_hit2 = self.step_cache.get_entry(c1[:gs.l + 1], gs, v, c2)
 
         else:
             for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
@@ -321,7 +288,6 @@ class OneshotSmart:
         :param visited: A list keeping track of all winning states d
         :return: Lazily return states d
         """
-        print(f'{c1} + {c2} + {v} + {str(gs)} + {visited}')
         next_marked = []  # store if the next step gs_, c_ has been explored already
         if c2 in visited:  # Return if c2 has been visited
             return
@@ -349,7 +315,8 @@ class OneshotSmart:
                                  refine_seperator(gs.I, x),
                                  gs.r + (1, 0)[p in c2])
                     if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
-                        next_marked.append((gs_.l, gs_.I, c2_))
+                        if self.ignore_ambiguous:
+                            next_marked.append((gs_.l, gs_.I, c2_))
                         yield from self.step_game_gen_buffered_dfs(c1, c2_, v, gs_, visited)
         self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
 

@@ -367,7 +367,6 @@ class RTS:
                 if i == deadlock_threshold-1: # self loops at last state
                     t2.append((i+1, x, i+1))
         f2 = [deadlock_threshold-1]
-        print(t2)
 
         q0 = D.get_initial_states()[0]
         p0 = 0
