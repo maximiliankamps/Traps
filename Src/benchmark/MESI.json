@@ -178,7 +178,7 @@
         }
       ]
     },
-    "m|e|s|i": {
+    "sigma": {
       "states": ["q0"],
       "initialState": "q0",
       "acceptingStates": ["q0"],

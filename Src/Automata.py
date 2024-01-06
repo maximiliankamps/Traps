@@ -214,6 +214,13 @@ class NFATransducer(AbstractTransducer):
                     result.add_transition(new_q, t, new_p)
         return result
 
+    def all_transitions(self):
+        result = []
+        for o in self.state_iterator():
+            result.extend(
+                list(map(lambda x: (o, self.alphabet_map.get_x(x[0]), x[1]), self.transitions.transition_iterator(o))))
+        return result
+
     def project_origin(self):
         result = NFATransducer(self.alphabet_map)
         result.initial_states = self.initial_states.copy()
@@ -350,21 +357,20 @@ class RTS:
 
     def build_SxD_transducer(self, deadlock_threshold):
         D = self.T.get_deadlock_transducer()
-
-        t1 = []
-        for i in range(0, deadlock_threshold):
-            for x in self.alphabet_map.sigma_iterator():
-                t1.extend([(i, x, i), (i, x, i+1)])
-        f1 = [deadlock_threshold-1]
+        t1 = D.all_transitions()
+        f1 = D.final_states
 
         t2 = []
-        for q in D.state_iterator():
-            for (s, p) in D.get_transitions(q):
-                t2.append((q, self.alphabet_map.get_x(s), p))
-        f2 = D.final_states.copy()
+        for i in range(0, deadlock_threshold):
+            for x in self.alphabet_map.sigma_iterator():
+                t2.append((i, x, i+1))
+                if i == deadlock_threshold-1: # self loops at last state
+                    t2.append((i+1, x, i+1))
+        f2 = [deadlock_threshold-1]
+        print(t2)
 
-        q0 = 0
-        p0 = D.initial_states[0]
+        q0 = D.get_initial_states()[0]
+        p0 = 0
 
         return self.pair_transducers(q0, p0, t1, t2, f1, f2)
 

@@ -121,6 +121,22 @@
     ]
   },
   "properties": {
+    "sigma": {
+      "states": [
+        "q0"
+      ],
+      "initialState": "q0",
+      "acceptingStates": [
+        "q0"
+      ],
+      "transitions": [
+        {
+          "origin": "q0",
+          "target": "q0",
+          "letter": ".*"
+        }
+      ]
+    },
     "nomutex": {
       "states": ["q0", "q1", "q2"],
       "initialState": "q0",

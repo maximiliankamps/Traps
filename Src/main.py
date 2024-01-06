@@ -26,15 +26,19 @@ if __name__ == '__main__':
 
 """
 if __name__ == '__main__':
-    rts = Automata.RTS("MESI.json")
+    rts = Automata.RTS("Burns.json")
 
     time_list = []
-    t = rts.get_T()
-    i = rts.get_I()
-    ixb = rts.get_IxB("modifiedmodified")
+    t = rts.build_SxD_transducer(1)
+    ixb = rts.get_IxB("sigma")
 
-    #t.to_dot("x", None)
-    #t.to_dot("initial", None)
+    rts.get_T().to_dot("T", None)
+    rts.T.get_deadlock_transducer().to_dot("t", None)
+    t.to_dot("x", None)
+    print(t.final_states)
+    ixb.to_dot("initial", None)
+    print(ixb.final_states)
+
     for i in range(0, 1):
         start_time = time.time()
         o = Algorithms.OneshotSmart(ixb, t)
@@ -44,4 +48,6 @@ if __name__ == '__main__':
         elapsed_time = end_time - start_time
         time_list.append(elapsed_time)
     print("Average time: ", sum(time_list) / len(time_list), "s")
+
+
 
