@@ -15,18 +15,17 @@ def log_succ(state, u, v):
     gs = Triple(0, refine_seperator(rts.get_T().alphabet_map.get_bit_map_sigma(), u), 0)
     o = Algorithms.OneshotSmart(ixb, t)
     for x in o.step_game_gen_buffered_dfs(state, [], v, gs, []):
-        print("")
-
+        print(x)
 
 """
 if __name__ == '__main__':
     rts = Automata.RTS("voting-token-start.json")
     a = rts.get_T().alphabet_map
+    rts.get_T().to_dot("m", None)
 
-    print(f'---------{a.transition_to_str(a.combine_x_and_y(1, 1))}---------')
-    log_succ([1,2], 1, 1)
+    print(f'---------{a.transition_to_str(a.combine_x_and_y(3, 2))}---------')
+    log_succ([1], 3, 2)
 """
-
 benchmarks = [
     ("Burns.json", ["nomutex"]),
     ("bakery.json", ["nomutex"]),
@@ -36,7 +35,11 @@ benchmarks = [
     ("synapse.json", ["dirtydirty", "dirtyvalid"]),
     ("dining-cryptographers.json", ["internal", "external"]),
     ("token-passing.json", ["manytoken", "notoken", "onetoken"]),
+    ("voting-token-passing.json", ["initial", "gamewon", "notokennomarked"])
 ]
+
+benchmarks2 = [("voting-token-passing.json", ["gamewon"])]
+benchmarks3 = [("voting-token-passing.json", ["initial", "gamewon", "notokennomarked"])]
 
 gen_implementations = {"buffer_bfs": Algorithms.OneshotSmart.step_game_gen_buffered_bfs,
                        "simple_dfs": Algorithms.OneshotSmart.step_game_gen_simple_dfs,
@@ -46,7 +49,7 @@ oneshot_implementations = {"multi_disprove",
                            "dfs",
                            "bfs"}
 
-
+max_time = 20 * 601
 class Timeout(Exception):
     pass
 
@@ -71,11 +74,6 @@ def try_one(func, t, gen_imp):
     finally:
         signal.signal(signal.SIGALRM, old_handler)
 
-    signal.alarm(0)
-    return result
-
-
-max_time = 300
 
 
 def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous):
@@ -100,7 +98,8 @@ def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous)
             t = rts.get_T()
 
             ixb = rts.get_IxB(test)
-            #ixb.to_dot("deadlock", None)
+            #t.to_dot("t", None)
+            #ixb.to_dot("ixb", None)
 
             start_time = time.time()
 
@@ -124,11 +123,30 @@ def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous)
             print("------------------------------------------------")
 
 
-
+"""Run all benchmarks will all implementations"""
 if __name__ == '__main__':
-    # execute_benchmarks(benchmarks, "buffer_dfs", "dfs", True)
-    benchmarks = [("voting-token-passing.json", ["gamewon"])]
-    #execute_benchmarks(benchmarks, "buffer_dfs", "dfs", True)
+    print("=======================================================================================")
+    print("Ignore ambiguous == false")
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_bfs", "bfs", False)
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_bfs", "dfs", False)
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_dfs", "bfs", False)
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_dfs", "dfs", False)
+    print("=======================================================================================")
+    print("Ignore ambiguous == true")
+    print("=======================================================================================")
     execute_benchmarks(benchmarks, "buffer_bfs", "bfs", True)
-    #execute_benchmarks(benchmarks, "buffer_bfs", "bfs", True)
-
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_bfs", "dfs", True)
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_dfs", "bfs", True)
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_dfs", "dfs", True)
+    print("=======================================================================================")
+    print("Sigma disprove")
+    print("=======================================================================================")
+    execute_benchmarks(benchmarks, "buffer_bfs", "min_disprove", True)
+    execute_benchmarks(benchmarks, "buffer_dfs", "min_disprove", True)

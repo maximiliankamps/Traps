@@ -23,7 +23,7 @@
     ]
   },
   "transducer": {
-    "states": ["q0", "q1", "q2", "q3"],
+    "states": ["q0", "q1", "q2", "q3", "q4"],
     "initialState": "q0",
     "acceptingStates": ["q4", "q5"],
     "transitions": [
@@ -36,6 +36,11 @@
           "origin": "q0",
           "target": "q3",
           "letter": "t,m"
+        },
+        {
+          "origin": "q1",
+          "target": "q4",
+          "letter": "t,t"
         },
         {
           "origin": "q1",

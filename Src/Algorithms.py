@@ -133,8 +133,10 @@ class OneshotSmart:
         work_set = [(ib0, c0)]
         visited_states = {(ib0, tuple(c0))}
         trans = 0
+
         while len(work_set) != 0:
             (ib, c) = work_set.pop(0)
+
             # iterate over all transitions of the state ixb
             for (ib_trans, ib_succ) in self.IxB.get_transitions(ib):
 
@@ -143,10 +145,12 @@ class OneshotSmart:
 
                 # iterate over all reachable (ib ∩ c) -> (ib_successor ∩ d)
                 for d in gen_func(self, c, [], v, gs, []):
-                    trans += 1
+                    self.trans += 1
+                    #print(f'{ib, c} -> {self.alphabet_map.transition_to_str(ib_trans)} -> {ib_succ, d}')
                     if (ib_succ, tuple(d)) not in visited_states:
                         visited_states.add((ib_succ, tuple(d)))
                         work_set.append((ib_succ, d))
+                        #print(work_set)
                         self.i += 1
                         if self.IxB.is_final_state(ib_succ) and len(
                                 list((filter(lambda q: (not self.T.is_final_state(q)), d)))) == 0:
@@ -183,7 +187,7 @@ class OneshotSmart:
             visited.append(c2)
             yield c2
 
-        successors = []
+        candidates = []
         for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
             for (qp_t, p) in trans_gen:
                 x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
@@ -200,8 +204,8 @@ class OneshotSmart:
                     if not gs.equal(gs_) and (gs_.l, gs_.I, c2_) not in next_marked:
                         if self.ignore_ambiguous:
                             next_marked.append((gs_.l, gs_.I, c2_))
-                            successors.append((c2_, gs_))
-        for (c2_, gs_) in successors:
+                        candidates.append((c2_, gs_))
+        for (c2_, gs_) in candidates:
             yield from self.step_game_gen_buffered_bfs(c1, c2_, v, gs_, visited)
         self.step_cache.add_entry(c1, gs, v, c2, visited)  # Add Game to cache
 
@@ -244,6 +248,7 @@ class OneshotSmart:
 
         for (q, trans_gen) in map(lambda origin: (origin, self.T.get_transitions(origin)), c1[:gs.l + 1]):
             for (qp_t, p) in trans_gen:
+                #print(q, qp_t, p)
                 x, y = self.alphabet_map.get_x(qp_t), self.alphabet_map.get_y(qp_t)
                 if symbol_not_in_seperator(gs.I, y):
                     if p not in c2:
