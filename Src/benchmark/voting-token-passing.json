@@ -134,7 +134,7 @@
     },
     "notokennomarked": {
       "states": [
-        "q0, q1"
+        "q0", "q1"
       ],
       "initialState": "q0",
       "acceptingStates": ["q1"],

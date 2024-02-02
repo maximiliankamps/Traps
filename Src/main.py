@@ -5,7 +5,6 @@ import Algorithms
 from Algorithms import refine_seperator
 import Automata
 from Util import Triple
-from itertools import product
 
 
 def log_succ(state, u, v):
@@ -16,6 +15,7 @@ def log_succ(state, u, v):
     o = Algorithms.OneshotSmart(ixb, t)
     for x in o.step_game_gen_buffered_dfs(state, [], v, gs, []):
         print(x)
+
 
 """
 if __name__ == '__main__':
@@ -50,30 +50,30 @@ oneshot_implementations = {"multi_disprove",
                            "bfs"}
 
 max_time = 20 * 601
+
+
 class Timeout(Exception):
     pass
 
 
-def try_one(func, t, gen_imp):
-    result = ""
-
+def try_one(o, func, t, gen_imp):
     def timeout_handler(signum, frame):
         raise Timeout()
 
     old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(t)  # trigger alarm in 3 seconds
+    signal.alarm(t)
 
     try:
         t1 = time.time()
         result = func(gen_imp)
         t2 = time.time()
+        o.print_oneshot_result(result)
 
     except Timeout:
         print('{} timed out after {} seconds'.format(func.__name__, t))
         return None
     finally:
         signal.signal(signal.SIGALRM, old_handler)
-
 
 
 def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous):
@@ -98,24 +98,21 @@ def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous)
             t = rts.get_T()
 
             ixb = rts.get_IxB(test)
-            #t.to_dot("t", None)
-            #ixb.to_dot("ixb", None)
+            # t.to_dot("t", None)
+            # ixb.to_dot("ixb", None)
 
             start_time = time.time()
 
             o = Algorithms.OneshotSmart(ixb, t)
             o.ignore_ambiguous = ignore_ambiguous
-            result = None
             if oneshot_name == "multi_disprove":
-                result = try_one(o.multi_disprove_oneshot, max_time, gen_imp)
+                try_one(o, o.multi_disprove_oneshot, max_time, gen_imp)
             elif oneshot_name == "min_disprove":
-                result = try_one(o.min_sigma_disprove_oneshot, max_time, gen_imp)
+                try_one(o, o.min_sigma_disprove_oneshot, max_time, gen_imp)
             elif oneshot_name == "dfs":
-                result = try_one(o.one_shot_dfs_standard, max_time, gen_imp)
+                try_one(o, o.one_shot_dfs_standard, max_time, gen_imp)
             elif oneshot_name == "bfs":
-                result = try_one(o.one_shot_bfs, max_time, gen_imp)
-
-            o.print_oneshot_result(result)
+                try_one(o, o.one_shot_bfs, max_time, gen_imp)
 
             end_time = time.time()
 
@@ -125,6 +122,7 @@ def execute_benchmarks(benchmark_list, gen_name, oneshot_name, ignore_ambiguous)
 
 """Run all benchmarks will all implementations"""
 if __name__ == '__main__':
+    execute_benchmarks(benchmarks, "buffer_bfs", "bfs", True)
     print("=======================================================================================")
     print("Ignore ambiguous == false")
     print("=======================================================================================")
@@ -138,7 +136,6 @@ if __name__ == '__main__':
     print("=======================================================================================")
     print("Ignore ambiguous == true")
     print("=======================================================================================")
-    execute_benchmarks(benchmarks, "buffer_bfs", "bfs", True)
     print("=======================================================================================")
     execute_benchmarks(benchmarks, "buffer_bfs", "dfs", True)
     print("=======================================================================================")
